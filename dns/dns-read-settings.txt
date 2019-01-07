@@ -1,1 +1,50 @@
 
+
+# Purpose -Get the DNS settings for a Servers 
+# Supported OS: 2016
+# Notification: email:  - If 3rd octet on the primary DNS server setting does not match value (i.e.‘14’)
+
+#  How to expland§
+# MINOR - cusotmize CSV and TXT file name
+# MINOR - cleanup temp files generated during process
+# MINOR - customize Mailserver, mailaddress, subject,...
+# MINOR - set variable for OS version (OperatingSystem)
+# MINOR - write time to output csv file
+#
+# Workflow
+# 1. Gett the server details from the AD and exporting it to CSV file
+
+# 2. From CSV file get the DNS values for NICs
+# 3. Search if specific filter matches (value (14) in the 3rd octed
+in third octet and send an email
+
+# Part 1
+# use Get-ADComputer OS properties and filter a specific OS version and function  and export it to CSV
+# Note ExpandPropert
+
+Get-ADComputer -Filter {OperatingSystem -Like "*2016*"}  -Properties * | Select-Object -ExpandProperty Name  | 
+Out-File c:\temp\server-list.csv
+
+# Part -2
+# By having the OSv version data in the CSV , with the pipe we get each server's name and 
+# with Get-Wmiobject the NIC Adapter details can be pulled and filtered by IP
+# With DNSServerSearchOrder the the list of DNS IP addresses can be used  
+# with the join operator the primary dns can be seperated from the secoundary dns " / " 
+# the result can be exporting to CSV
+
+
+Get-Content c:\temp\server-list.txt | Foreach-Object {Get-Wmiobject -computername $_ Win32_NetworkAdapterConfiguration -Filter "IPEnabled=TRUE"}|Select PSComputerName,@{Name=’DNSServerSearchOrder';Expression={[string]::join(“ / ”, ($_.DNSServerSearchOrder))}} | 
+Export-Csv c:\temp\dns.csv
+
+# Part -3
+# Below by importing the output and using the filter and Comparison_Operators "-notlike " we are searching with the wildcards
+# exporting the filnaloutput which doesnt match the IP.*.*.14.*
+# Best method to find the octet is to use the split operators in array..
+
+Import-Csv E:\tes.csv | Select-Object -Prop PSComputerName, DNSServerSearchOrder | Where-Object { $_.DNSServerSearchOrder -notlike '*.*.14.*'}|
+Export-Csv c:\temp\date-final.txt
+
+# Part -4
+#Using the sendmailmessage attaching the output and sending mail
+
+Send-MailMessage -to "Test itinfo@mycompany.com" -From "Test itinfo@mycompany.com" -Subject "Wrong DNS entry found " -SmtpServer mail.server.com -Attachments c:\temp\date-final.txt
