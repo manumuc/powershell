@@ -1,1 +1,45 @@
+# Resources
+# http://powershellcommunity.org/Forums/tabid/54/aft/8034/Default.aspx
+# http://www.4guysfromrolla.com/webtech/061202-1.shtml
+# http://hsdn.net/category_3.html
+https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/log-in-to-an-instance-of-sql-server-command-prompt?view=sql-server-2017
+#
+# Other tool: Active Directory Explorer by SysInternals/
+# see https://docs.microsoft.com/en-us/sysinternals/downloads/adexplorer
+#
+# usage: Test-UserCredential -username UserNameToTest -password (Read-Host)
 
+# https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/log-in-to-an-instance-of-sql-server-command-prompt?view=sql-server-2017
+# sqlcmd 
+# sqlcmd [ /E ] [/S servername]  
+# usage sqlcmd [ /E ] /S servername\instancename  
+
+Function Test-UserCredential { 
+    Param($username, $password) 
+    Add-Type -AssemblyName System.DirectoryServices.AccountManagement 
+    $ct = [System.DirectoryServices.AccountManagement.ContextType]::Machine, $env:computername 
+    $opt = [System.DirectoryServices.AccountManagement.ContextOptions]::SimpleBind 
+    $pc = New-Object System.DirectoryServices.AccountManagement.PrincipalContext -ArgumentList $ct 
+    $Result = $pc.ValidateCredentials($username, $password).ToString() 
+    $Result 
+} 
+
+
+
+# net use \\computername\sharename [password] /USER:]username]
+
+Function GoodPassword(strAdminUsername, strAdminPassword, strNTDomain)
+    Const ADS_SECURE_AUTHENTICATION = 1
+
+    On Error Resume Next
+    Set objIADS = GetObject("WinNT:").OpenDSObject("WinNT://" & _
+                        strNTDomain, strAdminUserame, _
+                        strAdminPassword, _
+                        ADS_SECURE_AUTHENTICATION)
+    if err.number = 0 then
+       GoodPassword = True
+    Else
+       GoodPassword = False
+    End If
+    On Error GoTO 0
+End Function
