@@ -12,7 +12,11 @@ https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/log-in-to
 # https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/log-in-to-an-instance-of-sql-server-command-prompt?view=sql-server-2017
 # sqlcmd 
 # sqlcmd [ /E ] [/S servername]  
-# usage sqlcmd [ /E ] /S servername\instancename  
+# usage sqlcmd [ /E ] /S servername\instancename
+# sqlcmd -S TMCM7-01-W16\DSM -U TMMR-CM-W16-01\sql-dsm
+
+# osql logon to sql server
+# https://docs.microsoft.com/en-us/sql/tools/osql-utility?view=sql-server-2017
 
 Function Test-UserCredential { 
     Param($username, $password) 
