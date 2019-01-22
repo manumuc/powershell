@@ -1,3 +1,5 @@
+# Source: http://geekswithblogs.net/QuandaryPhase/archive/2013/02/24/create-iis-app-pool-and-site-with-windows-powershell.aspx
+
 Import-Module WebAdministration
 $iisAppPoolName = "my-test-app"
 $iisAppPoolDotNetVersion = "v4.0"
