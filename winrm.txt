@@ -1,0 +1,176 @@
+Stop-Service - 
+    [-Force]
+    [-NoWait]
+    [-InputObject] <ServiceController[]>
+    [-PassThru]
+    [-Include <String[]>]
+    [-Exclude <String[]>]
+    [-WhatIf]
+    [-Confirm]
+    [<CommonParameters>]
+    
+# Source: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/stop-service?view=powershell-6
+Example: 
+Stop-Service -Name "sysmonlog"
+# Stop a service by using the display name
+Get-Service -DisplayName "telnet" | Stop-Service
+# Stop a service that has dependent services
+PS C:\> Get-Service -Name "iisadmin" | Format-List -Property Name, DependentServices
+PS C:\> Stop-Service -Name "iisadmin" -Force -Confirm
+
+    
+runas /user:Administrator cmd. 
+
+    $cert = New-SelfSignedCertificate -Subject "CN=TodoListDaemonWithCert" -CertStoreLocation cert:\CurrentUser\My 
+    -Provider "Microsoft Strong Cryptographic Provider"
+    
+>> C:\certs.text
+>> C:\certs.html | Out-File | Export-clixml C:\certs.xml | Export-csv C:\certs.csv
+
+Firewallport - The default port number = 5985
+---
+Enable Remote Management by Group Policy
+gpedit.msc
+computer Configuration\Administrative Templates\Windows components\Windows remote Management (WinRM)\WinRM Service
+"Allow remote server management through WinRM"
+
+gpupdate /force
+---
+reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f" 
+---
+# enable remote access of machines
+PS C:\WINDOWS\system32> Enable-PSRemoting -force
+WinRM is already set up to receive requests on this computer.
+WinRM is already set up for remote management on this computer.
+---
+Winrm quickconfig
+---
+winrm quickconfig
+ WinRM service is already running on this machine.
+ WinRM is not set up to allow remote access to this machine for management.
+ The following changes must be made:
+ Create a WinRM listener on HTTP://* to accept WS-Man requests to any IP on this
+ machine.
+ Make these changes [y/n]? y
+ WinRM has been updated for remote management.
+ Created a WinRM listener on HTTP://* to accept WS-Man requests to any IP on this
+ machine.
+winrm get winrm/config/client/auth
+---
+PS C:\WINDOWS\system32> winrm e winrm/config/listener
+Listener [Source="GPO"]
+    Address = *
+    Transport = HTTP
+    Port = 5985
+    Hostname
+    Enabled = true
+    URLPrefix = wsman
+    CertificateThumbprint
+    ListeningOn = null
+---
+netstat -ano | findstr LIST | findstr 5985
+---
+PS C:\WINDOWS\system32> Get-NetFirewallRule WINRM-HTTP-In-TCP | fl *
+
+
+Name                    : WINRM-HTTP-In-TCP
+ID                      : WINRM-HTTP-In-TCP
+Group                   : @FirewallAPI.dll,-30267
+Platform                : {}
+LSM                     : False
+DisplayName             : Windows Remote Management (HTTP-In)
+Enabled                 : False
+Profile                 : Public
+Direction               : Inbound
+Action                  : Allow
+EdgeTraversalPolicy     : Block
+PrimaryStatus           : OK
+Status                  : The rule was parsed successfully from the store.
+                          (65536)
+EnforcementStatus       : NotApplicable
+PolicyStoreSourceType   : Local
+Caption                 :
+Description             : Inbound rule for Windows Remote Management via
+                          WS-Management. [TCP 5985]
+ElementName             : @FirewallAPI.dll,-30253
+InstanceID              : WINRM-HTTP-In-TCP
+CommonName              :
+PolicyKeywords          :
+PolicyDecisionStrategy  : 2
+PolicyRoles             :
+ConditionListType       : 3
+CreationClassName       : MSFT|FW|FirewallRule|WINRM-HTTP-In-TCP
+ExecutionStrategy       : 2
+Mandatory               :
+PolicyRuleName          :
+Priority                :
+RuleUsage               :
+SequencedActions        : 3
+SystemCreationClassName :
+SystemName              :
+DisplayGroup            : Windows Remote Management
+LocalOnlyMapping        : False
+LooseSourceMapping      : False
+Owner                   :
+Platforms               : {}
+PolicyStoreSource       : PersistentStore
+Profiles                : 4
+RuleGroup               : @FirewallAPI.dll,-30267
+StatusCode              : 65536
+PSComputerName          :
+CimClass                : root/standardcimv2:MSFT_NetFirewallRule
+CimInstanceProperties   : {Caption, Description, ElementName, InstanceID...}
+CimSystemProperties     : Microsoft.Management.Infrastructure.CimSystemProperti
+                          es
+---                          
+PS C:\WINDOWS\system32> netsh winhttp show proxy
+
+Current WinHTTP proxy settings:
+
+    Direct access (no proxy server).
+---
+command line: winrm s winrm/config/client '@{TrustedHosts="RemoteComputer"}'
+Powershell: Set-Item wsman:\localhost\client\trustedhosts *
+---
+winrm create winrm/config/Listener?Address=*+Transport=HTTP
+
+Enter-PSSSession -computername "name_of_machine"
+Enter-PSSession -credential "domain"\"domain_admin" -computername "server_name"
+
+PS C:\Users\dyone> Enter-PSSession -credential "de-manuelar03\dyone" -computername "de-manuelar03"
+PS C:\Users\dyone> Get-ChildItem -Recurse cert:\
+
+
+Enter-PSSession : Connecting to remote server de-manuelar03 failed with the
+following error message : WinRM cannot complete the operation. Verify that the
+specified computer name is valid, that the computer is accessible over the
+network, and that a firewall exception for the WinRM service is enabled and
+allows access from this computer. By default, the WinRM firewall exception for
+public profiles limits access to remote computers within the same local
+subnet. For more information, see the about_Remote_Troubleshooting Help topic.
+At line:1 char:1
++ Enter-PSSession -credential "de-manuelar03\dyone" -computername "de-m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (de-manuelar03:String) [Enter-P
+   SSession], PSRemotingTransportException
+    + FullyQualifiedErrorId : CreateRemoteRunspaceFailed
+
+
+
+
+# Enables Powershell Remoting
+
+Param ([Parameter(Mandatory=$true)]
+[System.String[]]$Computer)
+$cred = Get-Credential
+ForEach ($comp in $computer ) {
+    Start-Process -Filepath "C:\Scripts\Pstools\psexec.exe" -Argumentlist "\\$comp -h -d winrm.cmd quickconfig -q" -Credential $cred
+	Write-Host "Enabling WINRM Quickconfig" -ForegroundColor Green
+	Write-Host "Waiting for 60 Seconds......." -ForegroundColor Yellow
+	Start-Sleep -Seconds 60 -Verbose	
+    Start-Process -Filepath "C:\Scripts\Pstools\psexec.exe" -Argumentlist "\\$comp -h -d powershell.exe enable-psremoting -force" -Credential $cred
+	Write-Host "Enabling PSRemoting" -ForegroundColor Green
+    Start-Process -Filepath "C:\Scripts\Pstools\psexec.exe" -Argumentlist "\\$comp -h -d powershell.exe set-executionpolicy RemoteSigned -force" -Credential $cred
+	Write-Host "Enabling Execution Policy" -ForegroundColor Green	
+    Test-Wsman -ComputerName $comp
+}          
