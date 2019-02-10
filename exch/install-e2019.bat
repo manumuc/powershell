@@ -6,6 +6,67 @@ runas /user:administrator powershell
 # get-ChildItem -Name
 # Get-Item -Path .\demo.ps1 | Selec-Object -Property Length
 
+# vm-folder
+Set-Variable -Name 'vmdir' -Value 'F:\vm'
+# oldvm=
+Set-Variable -Name 'oldvm' -Value 'osce14-01-w16'
+# newvm= 
+Set-Variable -Name 'newvm' -Value 'a1cent-01-w16'
+# newvm= 
+Set-Variable -Name 'newvm' -Value 'a1cent-01-w16'
+# vmext =  @('vmx','vmxf','nvram')'vmdk'
+$vmext =  @('vmx','vmxf')
+#Write-Host $vmext[0],$vmext.length
+
+# Backup infos
+$osusrdir = 'c:\users'
+$bkpusrs =  @('dyone','manu','administrator')
+$bkpdir = 'C:\tmp'
+
+
+# rename folder
+
+$old= $vmdir,$oldvm -join '\'
+$new= $vmdir,$newvm -join '\'
+Rename-Item -Path $old -NewName $new
+# rename files in folder
+$new=$vmdir + '\' + $newvm +  '\*.*'
+Get-ChildItem $dir | Rename-Item -NewName { $_.name -Replace $oldvm, $newvm }
+for ($i=1; $i -lt $vmext.length; $i++){
+   $new=$vmdir + '\' + $newvm + '\' + $newvm + '.' + $vmext[$i]
+   (Get-Content $new) -replace $oldvm, $newvm | Set-Content $new
+}
+
+#Disable UAC - restart needed!
+Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value "0" 
+Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Value "0" 
+Restart-Computer
+
+#CreateZipArchiveOffolder
+# Check if backup folder exists
+If (-Not (Test-path $bkpdir)) {New-Item -ItemType directory -Path $bkpdir}
+#If(Test-path $bkpdir) {Remove-item $bkpdir}
+
+for ($i=0; $i -lt $bkpusrs.length; $i++){
+ 
+   $old = $osusrdir + '\' + $bkpusrs[$i]
+   $new = $bkpdir + '\' + $bkpusrs[$i] + '.zip'
+   # if zip exist, then delete item
+   If(Test-path $new) {Remove-item $new}
+   # generate zip file
+   Add-Type -assembly 'system.io.compression.filesystem'
+   If(Test-path $old) { [io.compression.zipfile]::CreatefromDirectory($old,$new)}   
+   #If(Test-path $old) { [io.compression.zipfile]::CreatefromDirectory($old,$new)}   
+      #Get-ChildItem $old -Recurse -Exclude $bkpexcl | Copy-Item -Destination {Join-Path $new $_.FullName.Substring($old.length)}
+      #"\Program Files\7-Zip"\7z a -r -t7z %username%-backup.7z %userprofile%
+}
+
+}
+
+Sysprep.exe -generalize  /reboot 
+
+# Change information in 
+
 runas /user:administrator cmd
 
 powershell
