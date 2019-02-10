@@ -1,0 +1,50 @@
+Shortcutname,Shortcutvalue
+Start Menu,C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu
+Quick Launch,C:\Users\Administrator\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch
+ProgramData,C:\ProgramData
+7-Zip File Manager,C:\Program Files\7-Zip\7zFM.exe
+
+CCleaner,C:\Program Files\CCleaner\CCleaner64.exe
+Change Computer Settings,C:\Windows\System32\SystemPropertiesAdvanced.exe
+Command Prompt,C:\Windows\System32\cmd.exe
+
+Comodo Dragon,C:\Program Files (x86)\Comodo\Dragon\dragon.exe
+
+Computer Management,C:\Windows\System32\compmgmt.msc
+Control Panel,C:\Windows\System32\control.exe
+
+Defraggler,C:\Program Files\Defraggler\Defraggler64.exe
+
+Disk Cleanup,C:\Windows\System32\cleanmgr.exe
+
+Event Viewer,C:\Windows\System32\eventvwr.msc
+Windows Explorer,C:\Windows\explorer.exe
+FileHippoUpdate Checker,C:\Program Files (x86)\FileHippo.com\1.039\UpdateChecker.exe
+
+FileHippo AppManager,C:\Program Files (x86)\FileHippo.com\FileHippo.AppManager.exe
+
+Internet Explorer,C:\Program Files\Internet Explorer\iexplore.exe
+
+Mozilla Firefox,C:\Program Files\Mozilla Firefox\firefox.exe
+Mozilla Thunderbird,C:\Program Files (x86)\Mozilla Thunderbird\thunderbird.exe
+
+xLocal Security Policy,C:\Windows\System32\secpol.msc
+Notepad++,C:\Program Files (x86)\Notepad++\notepad++.exe
+
+On-Screen Keyboard,C:\Windows\System32\osk.exe
+
+PowerShell,C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+PowerShell ISE,C:\Windows\System32\WindowsPowerShell\v1.0\PowerShell_ISE.exe
+Remote Desktop Connection,C:\Windows\System32\mstsc.exe
+
+Run,
+
+Settings,C:\Windows\System32\control.exe
+Server Manager,C:\Windows\System32\ServerManager.exe
+
+Services,C:\Windows\System32\services.msc
+Task Manager,C:\Windows\System32\taskmgr.exe 
+Windows Defender,C:\Program Files\Windows Defender\MSASCui.exe
+
+Windows Firewall,C:\Windows\System32\WF.msc
+Wireshark,C:\Program Files\Wireshark\Wireshark.exe
