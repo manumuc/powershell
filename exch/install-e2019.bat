@@ -17,13 +17,59 @@ Set-Variable -Name 'newvm' -Value 'a1cent-01-w16'
 # vmext =  @('vmx','vmxf','nvram')'vmdk'
 $vmext =  @('vmx','vmxf')
 #Write-Host $vmext[0],$vmext.length
+# Path for Taskbar W2016
+Taskbardir ='C:\Users\Administrator\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar'
+
+Start Menu, "C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu"
+Quick Launch, "C:\Users\Administrator\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch"
+AppDAta, 
+
+7-Zip File Manager, "C:\Program Files\7-Zip\7zFM.exe"
+CCleaner, "C:\Program Files\CCleaner\CCleaner64.exe"
+Change Computer Settings, C:\Windows\System32\SystemPropertiesComputerName.exe
+Command Prompt, %windir%\system32\cmd.exe
+Comodo Dragon, "C:\Program Files (x86)\Comodo\Dragon\dragon.exe"
+Computer Management, %windir%\system32\compmgmt.msc /s
+Control Panel, 
+Defraggler, "%ProgramFiles%\Defraggler\Defraggler64.exe"
+Disk Cleanup, %windir%\system32\cleanmgr.exe
+Event Viewer, %windir%\system32\eventvwr.msc /s
+File Explorer, 
+FileHippo Update Checker, "C:\Program Files (x86)\FileHippo.com\1.039\UpdateChecker.exe"
+FileHippo AppManager, "C:\Program Files (x86)\FileHippo.com\FileHippo.AppManager.exe"
+Internet Explorer, "C:\Program Files\Internet Explorer\iexplore.exe"
+Mozilla Thunderbird, "C:\Program Files (x86)\Mozilla Thunderbird\thunderbird.exe"
+Local Security Policy, %windir%\system32\secpol.msc /s
+Notepad++, "C:\Program Files (x86)\Notepad++\notepad++.exe"
+On-Screen Keyboard, %windir%\system32\osk.exe
+PowerShell, %SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe
+PowerShell ISE, 
+Remote Desktop Connection, %windir%\system32\mstsc.exe
+Run, %windir%\system32\WindowsPowerShell\v1.0\PowerShell_ISE.exe
+Settings, %windir%\System32\Control.exe
+Server Manager, %windir%\system32\ServerManager.exe
+Services, %windir%\system32\services.msc
+Task Manager, %windir%\system32\taskmgr.exe /7
+Windows Defender, "%ProgramFiles%\Windows Defender\MSASCui.exe"
+Windows Firewall, %windir%\system32\WF.msc
+Wireshark, "%ProgramFiles%\Wireshark\Wireshark.exe"
 
 # Backup infos
 $osusrdir = 'c:\users'
 $bkpusrs =  @('dyone','manu','administrator')
 $bkpdir = 'C:\tmp'
 
-
+#Create Shortcuts in Task Menu
+# shortcutfile looks like: <Shortcutname>, <Shortcutvalue>
+$Shortcutfile='c:\temp\shortcutfile.txt'
+$csv = import-csv $Shortcutfile 
+$Shortcutpath='c:\temp'
+$csv | Foreach-Object{
+   $Shortcutname=$_.Shortcutname
+   $Shortcutvalue=$_.Shortcutvalue
+   New-Item -ItemType SymbolicLink -Path $Shortcutpath -Name $Shortcutname -Value $Shortcutvalue
+   
+   
 # rename folder
 
 $old= $vmdir,$oldvm -join '\'
