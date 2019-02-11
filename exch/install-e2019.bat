@@ -201,12 +201,17 @@ WinRM quickconfig
 # 
 # Disable IE Enhnaced Securtiy configuration
 #
+ cmd /c reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\system /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f
+ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "LocalAccountTokenFilterPolicy" -Value 1 -Force
+ Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "LocalAccountTokenFilterPolicy" -Value 1 -Force
 # 
-# show trusted hosts
-get-item wsman:\\localhost\client\trustedhosts
 #set trusted hosts
 set-item wsman:\\localhost\client\trustedhosts -value "*" -force
- "winrm enumerate winrm/config/listener"
+# show trusted hosts
+get-item wsman:\\localhost\client\trustedhosts
+# show listeners
+winrm enumerate winrm/config/listener
+
 
 # start Disk Management
 net start vds
