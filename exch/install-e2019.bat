@@ -196,10 +196,17 @@ cscript C:\Windows\System32\SCregEdit.wsf /cs /v
 # 1...manual, 3...enable DL only, 4...enalbe authomatic update
 cscript C:\Windows\System32\SCregEdit.wsf /au 1
 
+
+WinRM quickconfig
+# 
+# Disable IE Enhnaced Securtiy configuration
+#
+# 
 # show trusted hosts
 get-item wsman:\\localhost\client\trustedhosts
 #set trusted hosts
 set-item wsman:\\localhost\client\trustedhosts -value "*" -force
+ "winrm enumerate winrm/config/listener"
 
 # start Disk Management
 net start vds
