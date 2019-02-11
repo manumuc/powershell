@@ -24,36 +24,6 @@ Start Menu, "C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu
 Quick Launch, "C:\Users\Administrator\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch"
 AppDAta, 
 
-7-Zip File Manager, "C:\Program Files\7-Zip\7zFM.exe"
-CCleaner, "C:\Program Files\CCleaner\CCleaner64.exe"
-Change Computer Settings, C:\Windows\System32\SystemPropertiesComputerName.exe
-Command Prompt, %windir%\system32\cmd.exe
-Comodo Dragon, "C:\Program Files (x86)\Comodo\Dragon\dragon.exe"
-Computer Management, %windir%\system32\compmgmt.msc /s
-Control Panel, 
-Defraggler, "%ProgramFiles%\Defraggler\Defraggler64.exe"
-Disk Cleanup, %windir%\system32\cleanmgr.exe
-Event Viewer, %windir%\system32\eventvwr.msc /s
-File Explorer, 
-FileHippo Update Checker, "C:\Program Files (x86)\FileHippo.com\1.039\UpdateChecker.exe"
-FileHippo AppManager, "C:\Program Files (x86)\FileHippo.com\FileHippo.AppManager.exe"
-Internet Explorer, "C:\Program Files\Internet Explorer\iexplore.exe"
-Mozilla Thunderbird, "C:\Program Files (x86)\Mozilla Thunderbird\thunderbird.exe"
-Local Security Policy, %windir%\system32\secpol.msc /s
-Notepad++, "C:\Program Files (x86)\Notepad++\notepad++.exe"
-On-Screen Keyboard, %windir%\system32\osk.exe
-PowerShell, %SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe
-PowerShell ISE, 
-Remote Desktop Connection, %windir%\system32\mstsc.exe
-Run, %windir%\system32\WindowsPowerShell\v1.0\PowerShell_ISE.exe
-Settings, %windir%\System32\Control.exe
-Server Manager, %windir%\system32\ServerManager.exe
-Services, %windir%\system32\services.msc
-Task Manager, %windir%\system32\taskmgr.exe /7
-Windows Defender, "%ProgramFiles%\Windows Defender\MSASCui.exe"
-Windows Firewall, %windir%\system32\WF.msc
-Wireshark, "%ProgramFiles%\Wireshark\Wireshark.exe"
-
 # Backup infos
 $osusrdir = 'c:\users'
 $bkpusrs =  @('dyone','manu','administrator')
@@ -127,7 +97,6 @@ $env:MyTestVariable = "My temporary test variable."
 # Set Telemetry for Powershell Core 6.1
 [Environment]::SetEnvironmentVariable("POWERSHELL_TELEMETRY_OPTOUT", "1", "Machine")
 [Environment]::SetEnvironmentVariable("POWERSHELL_TELEMETRY_OPTOUT", "1", "User")
-
 #LX:
 sudo rm /opt/microsoft/powershell/6.0.0/DELETE_ME_TO_DISABLE_CONSOLEHOST_TELEMETRY
 # MSFT: 
@@ -135,7 +104,6 @@ sudo pwsh
 Remove-Item $PSHOME\DELETE_ME_TO_DISABLE_CONSOLEHOST_TELEMETRY
 
 DELETE_ME_TO_DISABLE_CONSOLEHOST_TELEMETRY
-
 
 # change time format
 intl.cpl
@@ -147,8 +115,8 @@ rename-netadapter -name "Ethernet" Lan
 rename-netadapter -name "Ethernet 2" Priv
 
 # set Ip address 
-get-netadapter -name Lan | new-netipaddress -ipaddress "172.21.3.35" -PrefixLength 22 -DefaultGateway 172.21.0.2
-get-netadapter -name Priv | new-netipaddress -ipaddress "192.168.200.35" -PrefixLength 24 -DefaultGateway 192.168.200.2
+get-netadapter -name Lan | new-netipaddress -ipaddress "192.168.1.36" -PrefixLength 22 -DefaultGateway 192.168.1.2
+get-netadapter -name Priv | new-netipaddress -ipaddress "192.168.200.36" -PrefixLength 24 -DefaultGateway 192.168.200.2
 
 #set dns 
 Set-DnsClientServerAddress -InterfaceAlias "Lan" -ServerAddresses 172.21.3.36, 8.8.8.8
