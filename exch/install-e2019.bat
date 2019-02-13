@@ -580,6 +580,49 @@ Restart-Service certsvc
 
 
 
+http://www.azure365pro.com/install-and-configure-certificate-authority-in-windows-server-2016/
+Open Server Manager – Manage – Add Roles and Features
+Choose : Active Directory Certificate Services
+Choose : •Certification Authority•Certification Authority Web Enrollment
+Choose Install and Close
+
+Step 3:
+To Configure Active Directory Certificate Services – Choose the Exclamation Mark on the Flag
+Configure Active Directory Certificate Services on the Destination Server
+Choose •Certificate Authority •Certification Authority Web Enrollment
+Choose Enterprise CA
+•Enterprise CAs Must be domain members and are typically online to issue certificates or certificate policies
+Step 4:
+ Choose Root CA
+Root CAs are the first and may be the only CAs Configured in a PKI Hierarchy.
+
+Step 5:
+ Create a new Private key
+Step 6:
+•Use SHA256
+•RSA#Microsoft Software Key Storage Provider
+•Key Length – 2048
+
+
+certification authority
+Certification authority web enrollment
+
+Enterprise CA
+Root CA
+New private Key
+RSA 2048
+SHA256
+
+Common name: tmmr-cm-w16-01-TMCM7-01-W16-CA
+Distinguished name: DC=tmmr-cm-w16-01,DC=tm
+PRev. of distinguished name: CN=tmmr-cm-w16-01-TMCM7-01-W16-CA,DC=tmmr-cm-w16-01,DC=tm
+
+30 years
+
+db location: C:\Windows\system32\CertLog
+Cert db log location: C:\Windows\system32\CertLog
+
+
 # Create a new Share 
 New-SmbShare -Name Share -Path  C:\Sgare -FullAccess  'trend.local\grsharew'   -ReadAccess 'trend.local\grsharer'  -Verbose 
 
