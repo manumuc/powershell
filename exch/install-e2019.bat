@@ -223,8 +223,6 @@ Get-Item HKCU:\Software\Microsoft\ServerManager
 Get-ItemProperty -Path HKCU:\Software\Microsoft\ServerManager -Name DoNotOpenServerManagerAtLogon | select DoNotOpenServerManagerAtLogon | Ft –AutoSize
 New-ItemProperty -Path HKCU:\Software\Microsoft\ServerManager -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value “0x1” –Force
 
-
-
 #
 # Disable IE Enhnaced Securtiy configuration
 #
@@ -328,6 +326,25 @@ restart-computer
 dism /online /enable-feature /featurename:NetFX3 /all /Source:d:\sources\sxs /LimitAccess
 
 
+# Enable Remote Desktop
+# Launch the registry editing tool by typing REGEDIT in the run.
+HKEY_LOCAL_MACHINE\SYSTEM\CurRentControlSet\Control\Terminal Server\fDenyTSConnections Name 0
+# Enable RDP:
+Reg add “HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server”  /v fDenyTSConnections /t REG_DWORD /d /f
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" –Value 
+# disable RDP: 
+Reg add “HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server”  /v fDenyTSConnections /t REG_DWORD /d 1 /f
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" –Value 1
+Netsh advfirewall firewall set rule group=”remote desktop” new enable=yes
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+# Add User to 
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member "manu"
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member "administrator"
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member "admin1"
+
+Invoke-Command -Computername <computer name> -ScriptBlock {Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" –Value 0 }
+Invoke-Command -Computername <computer name> -ScriptBlock {Enable-NetFirewallRule -DisplayGroup "Remote Desktop"}
+
 # 
 # Install Active Directory services
 # 
@@ -338,18 +355,74 @@ Install-windowsfeature -name AD-Domain-Services –IncludeManagementTools
 # Windows PowerShell script for AD DS Deployment
 #
 Import-Module ADDSDeployment
+
+dism /online /Disable-Feature /FeatureName:WindowsMediaPlayer /norestart
+dism /online /enable-feature /featurename:NetFX3 /all /Source:d:\sources\sxs /LimitAccess
+
+
+# Windows PowerShell script for AD DS Deployment
+#
+
+Import-Module ADDSDeployment
 Install-ADDSForest `
 -CreateDnsDelegation:$false `
 -DatabasePath "C:\Windows\NTDS" `
 -DomainMode "Win2012R2" `
--DomainName "tmmr-e16-01.tm" `
--DomainNetbiosName "TMMR-E16-01" `
+-DomainName "tmmr-a1c-w16-01.tm" `
+-DomainNetbiosName "TMMR-a1c-W16-01" `
 -ForestMode "Win2012R2" `
 -InstallDns:$true `
 -LogPath "C:\Windows\NTDS" `
 -NoRebootOnCompletion:$false `
 -SysvolPath "C:\Windows\SYSVOL" `
 -Force:$true
+
+
+----
+#
+# Enable Quick Edit for cmd
+#
+
+# gpmc.msc
+# Widows settings - Security Settings - Account Policy - Password Policy
+# Pwd must meet complexity - disbble
+# minimum pwd age - 0
+# maximum pwd age - 0 (never expires)
+# Windows settings - Security Settings - Local Policy - Security Options
+# Domain Controller - Refuse machine account pwd changes - enabled
+# Domain Member - Disable machine account pwd changes - enabled
+# Interactive Logon - do not require CTL+ALT+DEL - enabled
+# Shutdown - Allow system to be shut down without having to log on - enabled
+# Administative Templates - System
+# Display Shutdown Event Tracker - disabled
+# HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Reliability\ShutdownReasonOndword)=0
+ShutdownReasonUI(dword)=0
+OR
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Reliability
+# 
+gpupdate /force
+
+Set-ADDefaultDomainPasswordPolic
+Set-ADDefaultDomainPasswordPolicy -Identity TMMR-a1c-W16-01.tm -MaxPasswordAge 0 -MinPasswordLength 0 -PassThru
+
+# HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters\DisablePasswordChange=1
+# HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters\RefusePasswordChange=1
+
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" -Name "DisablePasswordChange" –Value 1
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" -Name "RefusePasswordChange" –Value 1
+
+Set-GPRegistryValue -Name "Default Domain Policy" -key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SeCEdit\Reg Values\MACHINE/System/CurrentControlSet/Services/Netlogon/Parameters" -ValueName "DisablePasswordChange" -Type DWORD -value 1
+Set-GPRegistryValue -Name "Default Domain Policy" -key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SeCEdit\Reg Values\MACHINE/System/CurrentControlSet/Services/Netlogon/Parameters" -ValueName "RefusePasswordChange" -Type DWORD -value 1
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\DisableCAD=1
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policy\System\shutdownwithoutlogon=1
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DisableCAD -Value 1
+Set-ItemProperty -Path "HKLM:\Microsoft\Windows\CurrentVersion\Policy\System" -Name shutdownwithoutlogon -Value 1
+
+reg add "HKLM\SOFTWARE\policies\microsoft\Windows NT\Reliability" /v ShutdownReasonUI  /t REG_DWORD /d 0 /f
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Reliability" -Name ShutdownReasonOn -Value 0
+ 
+
 
 
 #
@@ -359,39 +432,55 @@ NEW-ADGroup –name "Gr-Sales" –groupscope Global
 NEW-ADGroup –name "Gr-Techie" –groupscope Global
 NEW-ADGroup –name "Gr-All" –groupscope Global
 NEW-ADGroup –name "Gr-SMEX-Admin" –groupscope Global
+NEW-ADGroup –name "GR-SQL-ADM" –groupscope Global
+NEW-ADGroup –name "GR-EX-ADM" –groupscope Global
+NEW-ADGroup –name "GR-All-Srvc" –groupscope Global
+
 
 #
 # Add AD Users inclusive password
 #
-$password = „trendmicro“ | ConvertTo-SecureString -AsPlainText -Force
-New-ADUser -Name SMEX-adm -Surname SMEX-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+$password = "testlab" | ConvertTo-SecureString -AsPlainText -Force; 
+New-ADUser -Name user01 -Surname User01 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name user02 -Surname User02 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name user03 -Surname User03 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name user04 -Surname User04 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name user05 -Surname User05 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
 New-ADUser -Name chef -Surname chef -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user01 -Surname User01 -Path "OU=Users,DC=TREMD,C=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user01 -Surname User01 -Path "OU=Testuser,DC=TREMD,,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user02 -Surname User02 -Path "OU=Testuser,DC=TREMD,,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user03 -Surname User03 -Path "OU=Testuser,DC=TREMD,,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Alice -Surname Jones -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Bob -Surname Smith -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Tim -Surname Allen -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Happy -Surname Day -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name John -Surname Smith -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name smex-service -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name tmcm-service -Path "OU=User,DC=TREMD,DC=local" -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-
-
-
-
-
-
-
+New-ADUser -Name Alice -Surname Jones -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name Bob -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name Tim -Surname Allen -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name Happy -Surname Day -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name John -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name SQL-adm -Surname SQL-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name SQLSrvAcc -Surname SQLSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name Ex-adm   -Surname Ex-adm   -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name ExSrvAcc -Surname ExSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name ADSrvAcc -Surname ADSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name SMEX-adm -Surname SMEX-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name smex-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+New-ADUser -Name a1c-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+#
+# Add AD Groups
+#
+NEW-ADGroup –name "Gr-Sales" –groupscope Global
+NEW-ADGroup –name "Gr-Techie" –groupscope Global
+NEW-ADGroup –name "Gr-All" –groupscope Global
+NEW-ADGroup –name "Gr-SMEX-Admin" –groupscope Global
+NEW-ADGroup –name "GR-SQL-ADM" –groupscope Global
+NEW-ADGroup –name"GR-All-Srvc" –groupscope Global
+NEW-ADGroup –name "GR-EX-ADM" –groupscope Global
+NEW-ADGroup –name"Gr-SMEX-Admin"  –groupscope Global
 #
 # Add AD Users to AD Group 
 #
-Add-ADGroupMember -Identity Gr-All -Members User01,User02,User03,chef
-Add-ADGroupMember -Identity Gr-Techie -Members User03,chef
-Add-ADGroupMember -Identity Gr-Sales -Members User01,User02,chef
-
-
+Add-ADGroupMember -Identity Gr-All -Members User01,User02,User03,User04,User05,chef,alice,bob,tim,happy,john
+Add-ADGroupMember -Identity Gr-Techie -Members User03,User4,tim,chef
+Add-ADGroupMember -Identity Gr-Sales -Members User01,User02,bob,chef
+Add-ADGroupMember -Identity GR-SQL-ADM -Members SQL-adm
+Add-ADGroupMember -Identity GR-All-Srvc -Members SQLSrvAcc,ADSrvAcc,ADSrvAcc,smex-service,a1c-service
+Add-ADGroupMember -Identity GR-admin -Members SMEX-adm,Ex-adm,SQL-adm 
+Add-ADGroupMember -Identity GR-EX-ADM -Members SQLSrvAcc,ADSrvAcc
 #
 # List AD Users
 #
@@ -431,8 +520,65 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\DisableAntiSpywa
 # Settings / Privacy / Feedback & diagnostics/ Win should ask for my feedback: never, diangstics: security
 HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\DataCollection\AllowTelemetry(dword)=0
 
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name SubmitSampleConsent -Value 2
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name SpynetReporting -Value 0
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name DisableAntiSpyware -Value 1
+Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name AllowTelemetry -Value 0
+
 # copy the output of a command so it can be pasted in another application (via clipboard)
 application.exe | clip
+
+# Install CA
+
+# To install the inf file before  the Certification Service is enrolled
+# The OID should be changed to your own organizations OID, as the one listed is the Microsoft OID.  
+# See this MSDN article here:  (http://msdn.microsoft.com/library/windows/desktop/ms677621.aspx)
+---
+# c:\windows\CAPolicy.inf
+[Version]
+Signature=”$Windows NT$”
+[PolicyStatementExtension]
+Policies=InternalPolicy
+[InternalPolicy]
+OID= 1.2.3.4.1455.67.89.5
+URL=http://pki.bedrock.domain/pki/cps.html
+[Certsrv_Server]
+RenewalKeyLength=2048
+RenewalValidityPeriod=Years
+RenewalValidityPeriodUnits=20
+CRLPeriod=Years
+CRLPeriodUnits=20
+CRLDeltaPeriod=Days
+CRLDeltaPeriodUnits=0
+LoadDefaultTemplates=0
+---
+# Install AD CS Role
+Add-WindowsFeature Adcs-Cert-Authority -IncludeManagementTools
+# After the role is finished installing, you must configure it.  
+# Enter the following in PowerShell, changing the options as needed to fit your environment.  
+# The options are described below:
+Install-AdcsCrtificatoinAuthority -CAType EnterpriseRootCa -CryptoProviderName "
+# Configure Tool
+Install-AdcsCertificationAuthority -CAType StandaloneRootCA -CACommonName "TMMR A1C Root Certificate Authority" -KeyLength 4096 -HashAlgorithm SHA256 -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" -ValidityPeriod Years -ValidityPeriodUnits 20 -Force
+# Tools for Mangement Server
+Add-WindowsFeature RSAT-ADCS,RSAT-ADCS-mgmt
+---
+$crllist = Get-CACrlDistributionPoint; foreach ($crl in $crllist) {Remove-CACrlDistributionPoint $crl.uri -Force};
+Add-CACRLDistributionPoint -Uri C:\Windows\System32\CertSrv\CertEnroll\BEDROCK-ROOT%8%9.crl -PublishToServer -PublishDeltaToServer -Force
+Add-CACRLDistributionPoint -Uri http://pki.bedrock.domain/pki/BEDROCK-ROOT%8%9.crl -AddToCertificateCDP -AddToFreshestCrl -Force
+Get-CAAuthorityInformationAccess | where {$_.Uri -like '*ldap*' -or $_.Uri -like '*http*' -or $_.Uri -like '*file*'} | Remove-CAAuthorityInformationAccess -Force
+Add-CAAuthorityInformationAccess -AddToCertificateAia http://pki.bedrock.domain/pki/BEDROCK-ROOT%3%4.crt -Force
+certutil.exe –setreg CA\CRLPeriodUnits 20
+certutil.exe –setreg CA\CRLPeriod “Years”
+certutil.exe –setreg CA\CRLOverlapPeriodUnits 3
+certutil.exe –setreg CA\CRLOverlapPeriod “Weeks”
+certutil.exe –setreg CA\ValidityPeriodUnits 10
+certutil.exe –setreg CA\ValidityPeriod “Years”
+certutil.exe -setreg CA\AuditFilter 127
+Restart-Service certsvc
+
+
+
 
 # Create a new Share 
 New-SmbShare -Name Share -Path  C:\Sgare -FullAccess  'trend.local\grsharew'   -ReadAccess 'trend.local\grsharer'  -Verbose 
