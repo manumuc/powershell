@@ -421,11 +421,74 @@ Set-ItemProperty -Path "HKLM:\Microsoft\Windows\CurrentVersion\Policy\System" -N
 
 reg add "HKLM\SOFTWARE\policies\microsoft\Windows NT\Reliability" /v ShutdownReasonUI  /t REG_DWORD /d 0 /f
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Reliability" -Name ShutdownReasonOn -Value 0
- 
+#
+# Get Flashplayer version 
+# https://get.adobe.com/flashplayer/
+i.e. Version "32.0.0.142"
+# Get local Version of Flash Player
+# NPAPI (Mozilla)
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Adobe Flash Player NPAPI" | Select DisplayVersion
+# Unintall STring: C:\WINDOWS\SysWOW64\Macromed\Flash\FlashUtil32_32_0_0_142_Plugin.exe -maintain plugin
+# PPAPI (Chrome)
+HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Adobe Flash Player PPAPI\DisplayVersion
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Adobe Flash Player PPAPI" | Select DisplayVersion
+# Uninstall String: C:\WINDOWS\SysWOW64\Macromed\Flash\FlashUtil32_32_0_0_142_pepper.exe -maintain pepperplugin
+# install flash silently 
+#- install
+# msi: start /wait msiexec /i "%~dp0%xxxxxx.msi%" /qn
+# start /wait msiexec /i "%~dp0%xxxxxx.msi%" /qn
+# create config file  in 
+# C:\windows\system32\macromed\flash\mms.cfgin 
+#C:\windows\syswow64\macromed\flash\mms.cfgin 
+# with the content
+#AutoUpdateDisable=1
+#SilentAutoUpdateEnable=0
+----
 
 
+$RegUninstallPath=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
+$UninstallSearchFilter = {($_.GetValue('Publisher') -like '*Mozilla*')} -and {($_.GetValue('DisplayName') -like '*')} -and {($_.GetValue('DisplayVersion') -like '*')}
+foreach ($Path in $RegUninstallPath) {if (Test-Path $Path) {Get-ChildItem $Path | Where $UninstallSearchFilter }} 
+
+
+
+# 7zip
+# Get version installed x64: Registry:
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" | Select DisplayVersion
+# Get Version isntalled x32: 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip" | Select DisplayVersion
+
+# Comodo Dragon
+# Get version installed x64: Registry:
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" | Select DisplayVersion
+# Get Version isntalled x32: 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Comodo Dragon" | Select DisplayVersion
+
+# Java
+# Installer
+# Drive abreviation is needed!
+New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null 
+Get-ItemProperty -Path "HKCR:\Installer\Products\4EA42A62D9304AC4784BF2238120100F" | Select ProductName
+# Java uninstall string: 32 Bit 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{26A24AE4-039D-4CA4-87B4-2F32180172F0}" | Select DisplayVersion
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{26A24AE4-039D-4CA4-87B4-2F32180201F0}" | Select Displ
+#
+Java uninstall string: 64 Bit 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{26A24AE4-039D-4CA4-87B4-2F32180172F0}" | Select DisplayVersion
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{26A24AE4-039D-4CA4-87B4-2F32180201F0}" | Select DisplayVersion
+#
+Mozilla Firefox
+
+$RegUninstallPath=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
+$UninstallSearchFilter = {($_.GetValue('DisplayName') -like '*Firefox*') -and ($_.GetValue('Publisher') -like '*Mozilla*')}
+foreach ($Path in $RegUninstallPath) {if (Test-Path $Path) {Get-ChildItem $Path | Where $UninstallSearchFilter }} 
 
 #
+# Acrobat Reader uninstall string: 32 Bit 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{AC76BA86-7AD7-1033-7B44-AC0F074E4100}" | Select DisplayVersion
+# Acrobat Reader uninstall string: 64 Bit 
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{AC76BA86-7AD7-1033-7B44-AC0F074E4100}" | Select DisplayVersion
+
 # Add AD Groups
 #
 NEW-ADGroup –name "Gr-Sales" –groupscope Global
