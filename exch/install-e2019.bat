@@ -685,6 +685,35 @@ PRev. of distinguished name: CN=tmmr-cm-w16-01-TMCM7-01-W16-CA,DC=tmmr-cm-w16-01
 db location: C:\Windows\system32\CertLog
 Cert db log location: C:\Windows\system32\CertLog
 
+#----
+http://www.pdhewaju.com.np/2017/03/02/configuring-secure-ldap-connection-server-2016/
+http://pdhewaju.com.np/2016/04/08/installation-and-configuration-of-active-directory-certificate-services/
+
+LDAP...Lightweight Directory Access Protocol
+per default LDAP is insecure
+To make LDAP secure SSL can be used
+prerequisite: install a properly formatted certificate from MS CA or non MS CA
+
+LDAP Port: TCP/UDP 389
+LDAPS Port: TCP/UDP 636
+
+how to check: open ldp
+
+Install Certificate Authority on the Domain Controller
+
+Open the Local CA
+Right click on Certificate template / Manage / Action / View Object Identifiers
+Now scroll down and verify if you do have Server Authentication with object Identifier 
+	1.3.6.1.5.5.7.3.1, this is the thing which allows us to configure secure ldap.
+Open MMC / Add or Remove Snap-in / computer certificates / Add certificate for th local computer and click OK
+Expand "Personal" / Certificates / All Tasks / Request New Certificate... / 
+Certificate Enrollmnent / Next / Certificate Enrollment Policy Next / Select Domian Controller / Click Enroll
+Click Finish for completion
+Certificate issued for the domain controll is listed 
+
+
+
+
 
 # Create a new Share 
 New-SmbShare -Name Share -Path  C:\Sgare -FullAccess  'trend.local\grsharew'   -ReadAccess 'trend.local\grsharer'  -Verbose 
