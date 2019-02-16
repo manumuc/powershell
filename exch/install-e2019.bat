@@ -741,6 +741,24 @@ Get-MailboxDatabase
 Set-MailboxDatabase "Mailbox Database 1007878065" -CircularLoggingEnabled $false
 # restart Information store
 
+#---
+# generate certificate for Exchange Server
+- Browse to your Certificate services web console, via https://server.local/certsrv
+- Select a new request, and choose the advanced option on the next screen.
+- Submit a certificate request by using a base 64 encoded CMC or PKS #10 file.
+- Open the certificate request that you generated from my previous blog post. 
+This just needs to be opened in your favourite text editor.
+- Copy the contents of the file and paste it into the request field on the web console. 
+Select the server type as a web server, and leave all other attributes blank.
+- Save the resulting certificate to an accessible location, and close the web console.
+# import the certificate into Exchange - Through EMS - Use the Import-Exchange-Certificate-Path
+ Import-Exchange-Certificate-Path c:\temp\cert_answer.cer | Enable Exchangecertificate-Services “SMTP, IMAP, POP, IIS”
+# check and make sure that the new certificate is in use. i.e with  test-outlookwebservices
+ c:\windows\system32>test-outlookwebservices | FL
+# You should now see the details of the certificate. 
+# Easiest things to spot that it is the new certificate include the validity dates, or any SAN’s you may have included.
+# Browse to the OWA service and view the certificate that is presented to ensure that it is in fact the new and current one.
+#---
 
 # enable file and print services
 netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
