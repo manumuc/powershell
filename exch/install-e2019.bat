@@ -503,26 +503,57 @@ NEW-ADGroup –name "GR-All-Srvc" –groupscope Global
 #
 # Add AD Users inclusive password
 #
-$password = "testlab" | ConvertTo-SecureString -AsPlainText -Force; 
-New-ADUser -Name user01 -Surname User01 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user02 -Surname User02 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user03 -Surname User03 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user04 -Surname User04 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name user05 -Surname User05 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name chef -Surname chef -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Alice -Surname Jones -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Bob -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Tim -Surname Allen -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Happy -Surname Day -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name John -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name SQL-adm -Surname SQL-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name SQLSrvAcc -Surname SQLSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name Ex-adm   -Surname Ex-adm   -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name ExSrvAcc -Surname ExSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name ADSrvAcc -Surname ADSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name SMEX-adm -Surname SMEX-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name smex-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
-New-ADUser -Name a1c-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled $True
+$password = "testlab" | ConvertTo-SecureString -AsPlainText -Force; or
+# input new password
+$password = Read-Host -Prompt "Password" -AsSecureString
+# import new AD user via script
+Import-Csv -Path c:\scripts\newusers.csv |
+foreach {
+New-ADUser -Name $_.Name -SamAccountName $_.samaccountname `
+-AccountPassword $secpass -Enabled:$true `
+-Path 'OU=UserGroups,DC=Manticore,DC=org' 
+}
+# move AD User to another OU
+Get-ADUser -Filter * -SearchBase 'OU=UserGroups,DC=Manticore,DC=org'  | 
+Move-ADObject -TargetPath 'OU=UserAccounts,DC=Manticore,DC=org'
+# set additional attribute:
+$source = Get-ADUser -Identity bobsmith -Properties OfficePhone, otherHomePhone
+Set-ADUser -Identity EmilySmith -Replace @{telephoneNumber = $($source.OfficePhone); otherHomePhone = $($source.otherHomePhone)}
+Get-AD User -Identtiy bobsmith -properties 
+Get-ADUser -Identity emilysmith -Properties * | select *phone*
+# remove a user
+Remove-ADUser -Identity emilysmith -whatif
+# find locked AD user
+Search-ADAccount -LockedOut
+# To find users with expired passwords: 
+Search-ADAccount -PasswordExpired
+# To find expired accounts: 
+Search-ADAccount -AccountExpired
+# get accounts wiht last login date < 30 days
+$testdate = (Get-Date).AddDays(-90)
+Get-ADUser -Filter * -Properties LastLogonDate | where {$_.LastLogonDate -And  $_.LastLogonDate -le $testdate}
+This code look
+
+New-ADUser -Name user01 -Surname User01 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name user02 -Surname User02 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name user03 -Surname User03 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name user04 -Surname User04 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name user05 -Surname User05 -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name chef -Surname chef -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name Alice -Surname Jones -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name Bob -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name Tim -Surname Allen -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name Happy -Surname Day -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name John -Surname Smith -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name SQL-adm -Surname SQL-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name SQLSrvAcc -Surname SQLSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name Ex-adm   -Surname Ex-adm   -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name ExSrvAcc -Surname ExSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name ADSrvAcc -Surname ADSrvAcc -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name SMEX-adm -Surname SMEX-adm -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name smex-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name a1c-service -AccountPassword $password -ChangePasswordAtLogon $False -Enabled:$True
+New-ADUser -Name charles -Surname tailer -SamAccountName charlestailer -AccountPassword $password -Enabled:$true -Path 'OU=UserGroups,DC=Manticore,DC=org' -PassThru
 #
 # Add AD Groups
 #
