@@ -1,6 +1,9 @@
 #--- run as administrator
 runas /user:administrator powershell
 
+# check filesystem
+fsutil fsinfo ntfsinfo c:
+
 # generate folder structure c:\ inst,temp, tmp, noscan
 # set-location /Path c:\inst
 # get-ChildItem -Name
@@ -791,6 +794,146 @@ Select the server type as a web server, and leave all other attributes blank.
 # Browse to the OWA service and view the certificate that is presented to ensure that it is in fact the new and current one.
 #---
 
+
+# Exchange default databse foulder (*.edb)
+C:\Program Files\Microsoft\Exchange Server\V15\Mailbox\Mailbox Database <Nummer>.
+
+# create new mailbox databaases
+New-MailboxDatabase -Name "new-db-name" -EdbFilePath D:\DatabaseFiles\MailboxDatabase01.edb -LogFolderPath D:\DatabaseFiles\LogFolder
+
+# restart exchange database service
+# Net stop msexchangeis; Net start msexchangeis
+
+# moaunt new database
+mount-Database  -Identity  "new-db-name"
+
+# Anzeige der aktuell vorhandenen Datenbanken
+Get-MailboxDatabase |fl Name,EdbFilePath,LogFolderPath
+
+# umbenennen der Datenbanken
+Set-MailboxDatabase "Mailbox Database 32566324217" -Name "DB01"
+
+# databank verschieben
+Move-DatabasePath -Identity <Datenbank> -EdbFilePath <Neuer Pfad zur EDB-Datei>
+# datenbank verschieben nit aenderung des Speicherung der Transaction logs
+Move-DatabasePath DB01 -EdbFilePath D:\DB01\DB01.edb -LogFolderPath E:\DB01
+
+# Set Max values for mailboxes
+#
+
+# Generate DAG Groups
+#
+
+#  Maibloxen anzeigen 
+Get-MailboxDatabase. 
+# Anzeige Maiboxen inklusive Mountstatus
+Get-MailboxDatabase | Select Name, Mounted 
+# Satus der Datenbank 
+Get-MailboxDatabase -Status
+# informationen zur sicherung 
+Get-MailboxDatabase -Status | Select Name, Mounted, LastFullBackup,LastIncrementalBackup,BackupinProgress 
+# status der Replikation
+Get-MailboxDatabaseCopyStatus
+# REpliationsstatus aller datenbank vom server
+Get-MailboxDatabase | Get-MailboxDatabaseCopyStatus
+
+# Exchange maintenance - offline Defragmenierung (database shrink)
+Eseutil.exe /d
+# ???
+eseutil /mh " Mailbox Database.edb" 
+# DAtenbank auf konsistenz pruefen
+eseutil /k " Mailbox Database.edb" 
+# datenbank integritaet ueberpruefen
+Eseutil /g "Mailbox Database <ID>.edb"
+
+# ab Exchange 2013 Reparaturmoeglichkeit (frueher isinteg
+New-MailboxRepairRequest -Database "Mailbox Database" -CorruptionType SearchFolder,AggregateCounts,ProvisionedFolder,FolderView 
+
+# datenbank dismounten (z.B. fuer offline defrag)
+Dismount-Database -Identity <Name der Datenbank>
+# Status sder Datenbank nach dem defragemtieren - ist  der unterschied sehr gross, dann defrag
+Get-MailboxDatabase -Status |ft Name,DatabaseSize,AvailableNewMailboxSpace 
+# 
+
+# Enable accout for Mailbox export/import for user:
+New-ManagementRoleAssignment -Role "Mailbox Import Export" -User "<Benutzername>" 
+# Enable group for Mailbox export/import:
+New-ManagementRoleAssignment -Role "Mailbox Import Export" -SecurityGroup "<Gruppe>"
+# restart the Exchange Management Shell after changing the rights
+# After the restart following cmdlets are available
+# Get Help for new command for Export also possible for import
+Help New-Mailbox-ExportRequest 
+Help New-MailboxExportRequest  -Detailed
+Help New-MailboxExportRequest -Examples 
+
+# New-MailboxImportRequest: Mit  diesem  Cmdlet  importieren  Sie  Daten  einer  .pst-Datei in Exchange-Datenbanken. 
+#    Der Befehl überprüft den Import auf Duplikate und über-geht diese beim Import.
+# Get-MailboxImportRequest Mit diesem Cmdlet erhalten Sie Informationen über aktu-elle Importvorgänge und deren Status.
+# Get-MailboxImportRequestStatistics Mit diesem Befehl lassen sich weiterführende Informationen anzeigen, 
+#    die über die Möglichkeiten von Get-MailboxImportRequest hin-ausgehen. 
+# Remove-MailboxImportRequest Dieses Cmdlet löscht Importvorgänge, die noch in der Warteschlange stehen. 
+#   Auch bereits durchgeführte Importvorgänge lassen sich mit dem Befehl aus der Anzeige entfernen.
+# ResumE-MailboxImportRequest Mit diesem Cmdlet starten Sie einen fehlgeschlage-nen Import erneut. 
+#   Auch mit Suspend-MailboxImportRequest pausierte Importvorgänge lassen sich mit dem Cmdlet erneut starten.
+# Set-MailboxImportRequest Mit  diesem  Cmdlet  passen  Sie  Optionen  eines  bereits erstellten Importvorgangs nachträglich an.
+# Suspend-MailboxImportRequest Mit  diesem  Befehl  halten  Sie  einen  oder  mehrere Importvorgänge an.
+# New-MailboxExportRequest Mit  diesem  Befehl  exportieren  Sie  Postfächer  in  .pst-Dateien.
+# Get-MailboxExportRequest Dieses Cmdlet zeigt Informationen zu den anstehendenExportvorgängen an.
+# Get-MailboxExportRequestStatistics Mit diesem Cmdlet zeigen Sie erweiterte Infor-mationen an, die Get-MailboxExportRequest 
+#    nicht anzeigt. 
+# RemovE-MailboxExportRequest Löscht anstehende Exportvorgänge oder entfernt die Anzeige bereits durchgeführter Vorgänge.
+# ResumE-MailboxExportRequestMit diesem Cmdlet starten Sie einen fehlgeschlage-nen Export erneut. Auch mit Suspend-MailboxExportRequest
+#    pausierte Exportvorgänge lassen sich mit dem Cmdlet wieder starten.
+# Set-MailboxExportRequestMit  diesem  Cmdlet  passen  Sie  Optionen  eines  bereits erstellten Exports-Vorgangs nachträglich an.
+# Suspend-MailboxExportRequestMit  diesem  Befehl  halten  Sie  einen  oder  mehrere Exportvorgänge an.Die Cmdlets zum Importieren und 
+#    Exportieren bieten mit der Option -ContentFilter weitrei-chende Möglichkeiten zur Filterung an. 
+
+# Anzeige der Postfaecher einer DAtenbank
+Get-Mailbox -Database <Name der Datenbank> 
+# Ausgabe aller Mailboxen einer Organisation
+# Get-Mailbox
+
+
+# Export mailbox from database to pst mit oder ohne -Confirm:$false - Export-Mailbox is old - 2010
+# note: per default the needed rights are missing for Organisationsadministrator oder Domainadministrators (do not see the cmdlets) 
+# Export-Mailbox is not available in Exchange 2016 - Export-Mailbox is old - 2010
+Get-Mailbox -Database <Name des Exchange-Servers>\<Postfachdatenbank> | Export-Mailbox -PSTFolderPath <Pfad> 
+
+# Import pst to database mit oder ohne -Confirm:$false 
+# Import-Mailbox is not available in Exchange 2016 - Import-Mailbox is old 2013
+Get-Mailbox -Database <Name des Exchange-Servers>\<Postfachdatenbank> | Import-Mailbox -PSTFolderPath <Pfad> 
+
+# Import post to database for Exchange 2016 - needs UNC path, with -verbose more inforamtion
+New-MailboxImportRequest -Mailbox <Name des Postfachs> -FilePath <UNC-Pfad und Name der .pst-Datei>
+New-MailboxImportRequest -Mailbox joost -FilePath \\s1\temp\outlook1.ps
+# Importstatus
+Get-MailboxImportRequest <Name des Importvorgangs> |fl
+# in case or errors
+# 1. Check Role assignment persmissions 
+Get-ManagementRoleAssignment -RoleAssignee <Gruppe oder Benutzer>
+# 2. see if the mailbox is available
+Get-Mailbox -Identity <Name>
+# 3. enough rights to the Mabilbox
+Get-Mailbox -Identity <Name> | Get-MailboxPermission 
+# bei erfolgreichem importstatus loeschen des Reports
+$ Import von speziellen foldern moeglich< exclude von Ordnern mit  -ExcludeDumpster, Zielorder im Postfach mit TargetRootFolder
+# mit -IsArchive, import ins Archiv
+# New-MailboxImportRequest -Mailbox <Name> -FilePath <UNC-Pfad und Name der .pst-Datei> -IncludeFolders <Name des Ordners aus der .pst-Datei>
+
+
+## Konnektivitaet von Exchange testen
+# Voraussetzunt: TEstuser ist angelegt: 
+C:\Program Files\Micro-soft\Exchange Server\V15\Scripts\New-TestCasConnectivityUser.ps1 
+# Script auf Maiboxserver ausfuehren:
+Get-MailboxServer | .\New-TestCasConnectivityUser.ps1
+# Anzeige aller ClientAccess serve: 
+Get-ClientAccessServer
+# ActiveSync testen:
+Test-ActiveSyncConnectivity-CliemtAccessServer <Servername>
+# Andere Test commandlets:
+ Test-OwaConnectivity , Test-EcpConnectivity, Test-WebServicesConnectivity, Test-PopConnectivity, Test-ImapConnectivit
+
+Test-OutlookConnectivity -Protocol httpTest-OutlookConnectivity -Protocol tcp
 # enable file and print services
 netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
 # enable powerprofile
