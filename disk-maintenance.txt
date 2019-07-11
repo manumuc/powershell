@@ -1,0 +1,32 @@
+
+C:\Windows\System32\cmd.exe /c Cleanmgr /sageset:65535 & Cleanmgr /sagerun:65535
+sfc /scannow
+sfc /scannow 
+chkdsk c: /f /r
+findstr /c:"[SR]" %windir%\logs\cbs\cbs.log >sfcdetails.txt
+%windir%\system32\Dism.exe /Online /Cleanup-Image /ScanHealth
+sfc /scannow
+
+REM dism /online /cleanup-image /spsuperseded
+
+
+
+REM dism /online /cleanup-image /StartComponentCleanup
+
+REM dism /online /cleanup-image /scanhealth
+
+
+REM dism /online /cleanup-image /scanhealth
+
+REM powershell: repair-windowsimage -online scanhealth
+
+REM dism /online /cleanup-image /Checkhealth
+
+REM powershell: repair-windowsimage -online checkhealth
+
+REM dism /online /cleanup-image /restorehealth
+
+REM powershell: repair-windowsimage -online restorehealth
+
+REM sfc /scannow
+REM findstr /c:"[SR]" %windir%\Logs\CBS\CBS.log >"%userprofile%\Desktop\sfcdtails.txt"
