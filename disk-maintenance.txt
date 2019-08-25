@@ -1,4 +1,13 @@
 
+# de-fragmentation and repair of updatedb
+# net stop bits
+# net stop wuauserv
+# esentutl.exe /k c:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+# esentutl.exe /d c:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+# esentutl.exe /r c:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+# esentutl.exe /p c:\Windows\SoftwareDistribution\DataStore\DataStore.edb
+
+
 C:\Windows\System32\cmd.exe /c Cleanmgr /sageset:65535 & Cleanmgr /sagerun:65535
 sfc /scannow
 sfc /scannow 
