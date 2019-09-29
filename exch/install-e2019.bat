@@ -1,6 +1,9 @@
 #--- run as administrator
 runas /user:administrator powershell
 
+# install .NET 3.5 SP1 on W19
+Dism /online /enable-feature /featurename:NetFX3 /All 
+
 # check filesystem
 fsutil fsinfo ntfsinfo c:
 
