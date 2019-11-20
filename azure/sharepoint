@@ -1,0 +1,219 @@
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned  
+# Prompt for credentials to reuse throughout the script            
+$cred = Get-Credential .\azureuser            
+            
+# Echo the date for reference in the console output            
+Get-Date         
+
+# Query the current list of domain controllers before the new one            
+Get-ADDomainController -Filter * |            
+    Format-Table Name, Site, IPv4Address -AutoSize            
+
+# List the currently installed features on the remote server            
+Get-WindowsFeature | Where-Object Installed | Format-Table Name  
+
+# change hostname
+rename-computer -newname a1c-01-w19
+
+rename-netadapter -name "Ethernet1" Lan
+rename-netadapter -name "Ethernet0" Priv
+
+# install DS Agent and add to DSaaS
+
+# install SQL express locally  to Sharepoint Server around 550 MB
+Invoke-WebRequest -URi https://download.microsoft.com/download/2/A/5/2A5260C3-4143-47D8-9823-E91BB0121F94/SQLEXPR_x64_ENU.exe 
+    -outfile d:\SQL2014SP2-Expr.exe
+# install SQL SMS locally to Sharepoint Server around 550 MB
+Invoke-WebRequest -URi https://aka.ms/ssmsfullsetup d:\
+
+# generate local group 
+
+#deploy Activedirectory
+
+
+Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools 
+
+Get-Command -Module ADDSDeployment 
+
+
+Install-ADDSForest -CreateDnsDelegation:$false -DomainName "TMMR-wss-W16-01.tm" -DomainNetbiosName "TMMR-wss-W16-01" -ForestMode "Win2012R2" -InstallDNS:$true -LogPath "C:\Windows\NTDS" -Norebootoncompletion:$true -SysvolPath "C:\Windows\SYSVOL" -Force:$true
+        -SafeModeAdministratorPassword (ConvertTo-SecureString 'change!' -AsPlainText -Force) -SiteName "Azure-EU" -Confirm:$false   
+
+Install-ADDSForest `
+-CreateDnsDelegation:$false `
+-DatabasePath "C:\Windows\NTDS" `
+-DomainMode "Win2012R2" `
+-DomainName "TMMR-wss-W16-01.tm" `
+-DomainNetbiosName "TMMR-wss-W16-01" `
+-ForestMode "Win2012R2" `
+-InstallDns:$true `
+-LogPath "C:\Windows\NTDS" `
+-NoRebootOnCompletion:$true `
+-SysvolPath "C:\Windows\SYSVOL"
+-DelegatedAdministratorAccountName
+
+Restart-Computer . -Wait -For PowerShell -Force -Confirm:$false
+
+Get-ADDomainController -Filter * | Format-Table Name, Site, IPv4Address -AutoSize 
+Get-Service adws,kdc,netlogon,dns
+
+
+# Add AD Groups
+#
+NEW-ADGroup –name "Gr-Sales" –groupscope Global
+NEW-ADGroup –name "Gr-Techie" –groupscope Global
+NEW-ADGroup –name "Gr-All" –groupscope Global
+NEW-ADGroup –name "Gr-SMEX-ADM" –groupscope Global
+NEW-ADGroup –name "GR-SQL-ADM" –groupscope Global
+NEW-ADGroup -name "GR-PP-ADM" –groupscope Global
+NEW-ADGroup -name "GR-SP-ADM" –groupscope Global
+NEW-ADGroup –name "GR-EX-ADM" –groupscope Global
+NEW-ADGroup –name "GR-All-Srvc" –groupscope Global
+
+#
+# Add AD Users inclusive password
+#
+$password = "setgoodpwd!" | ConvertTo-SecureString -AsPlainText -Force 
+New-ADUser -sAMAccountName user01 -Name user01 -Surname User01 -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName user02 -Name user02 -Surname User02 -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName user03 -Name user03 -Surname User03 -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName user04 -Name user04 -Surname User04 -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName user05 -Name user05 -Surname User05 -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+
+New-ADUser -sAMAccountName chef -Name chef -Surname chef -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName SQL-adm -Name SQL-adm -Surname SQL-adm -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName SQLSrvAcc -Name SQLSrvAcc -Surname SQLSrvAcc -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName PP-adm -Name Pp-adm   -Surname PP-adm -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName SP-adm -Name Sp-adm   -Surname SP-adm -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName Ex-adm -Name Ex-adm   -Surname Ex-adm -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName ExSrvAcc -Name ExSrvAcc -Surname ExSrvAcc -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName ADSrvAcc -Name ADSrvAcc -Surname ADSrvAcc -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True
+New-ADUser -sAMAccountName SPSrvAcc -Name SPSrvAcc -Surname SPSrvAcc -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True
+New-ADUser -sAMAccountName PPSrvAcc -Name PPSrvAcc -Surname PPSrvAcc -Path 'CN=Users,DC=TMMR-wss-W16-01,DC=tm'  -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True
+
+#
+# Add AD Users to AD Group 
+#
+Add-ADGroupMember -Identity Gr-All -Members User01,User02,User03,User04,User05,chef,azureuser
+Add-ADGroupMember -Identity Gr-Techie -Members User03,chef,azureuser
+Add-ADGroupMember -Identity Gr-Sales -Members User01,User02,chef,azureuser
+Add-ADGroupMember -Identity GR-SQL-ADM -Members SQL-adm,administrator,azureuser
+Add-ADGroupMember -Identity GR-All-Srvc -Members SQLSrvAcc,ADSrvAcc,ExSrvAcc,azureuser
+Add-ADGroupMember -Identity GR-EX-ADM -Members SQLSrvAcc,ADSrvAcc,administrator,azureuser
+Add-ADGroupMember -Identity GR-SP-ADM -Members SQLSrvAcc,ADSrvAcc,SPSrvAcc,SP-adm,administrator,azureuser
+Add-ADGroupMember -Identity GR-PP-ADM -Members SQLSrvAcc,ADSrvAcc,SPSrvAcc,PPSrvAcc,SP-adm,PP-adm,administrator,azureuser
+Add-ADGroupMember -Identity GR-SMEX-ADM -Members SMEX-adm,azureus
+Add-ADGroupMember -Identity Domain Administrator -Members User01,User02,User03,User04,User05,chef,azureuser
+
+#
+# List AD Users
+#
+Get-ADGroupMember "Gr-All"
+Get-ADGroupMember "Gr-Techie"
+Get-ADGroupMember "Gr-Sales"
+Get-ADGroupMember "GR-SQL-ADM"
+Get-ADGroupMember "GR-All-Srvc"
+Get-ADGroupMember "GR-PP-ADM" 
+Get-ADGroupMember "GR-SP-ADM" 
+Get-ADGroupMember "GR-EX-ADM" 
+Get-ADGroupMember "GR-PP-ADM" 
+Get-ADGroupMember "Gr-SMEX-Admin" 
+
+# Extract SQL files
+
+
+# unattended intallation SQL;
+C:\Users\Public\Desktop\SQL2014SP2-Expr.exe  /extract: "c:\temp"
+
+
+#install  SQL SMS
+C:\Users\Public\Desktop\SSMS-Setup-ENU.exe /install /quiet /passive /norestart
+
+# set browser to start
+sc config SQLBrowser start= auto
+# After it is enabled, run the following command from the command prompt to start the service:
+net start SQLBROWSER
+# set TCP/IP protocol 
+$smo = 'Microsoft.SqlServer.Management.Smo.'  
+$wmi = new-object ($smo + 'Wmi.ManagedComputer')  
+# Enable the TCP protocol on the default instance.  If the instance is named, replace MSSQLSERVER with the instance name in the following line.  
+$uri = "ManagedComputer[@Name='" + (get-item env:\computername).Value + "']/ServerInstance[@Name='SP']/ServerProtocol[@Name='Tcp']"  
+$Tcp = $wmi.GetSmoObject($uri)  
+$Tcp.IsEnabled = $true  
+$Tcp.Alter()  
+$Tcp  
+
+
+#Enabling SQL Server Ports
+New-NetFirewallRule -DisplayName “SQL Server” -Direction Inbound –Protocol TCP –LocalPort 1433 -Action allow
+New-NetFirewallRule -DisplayName “SQL Admin Connection” -Direction Inbound –Protocol TCP –LocalPort 1434 -Action allow
+New-NetFirewallRule -DisplayName “SQL Database Management” -Direction Inbound –Protocol UDP –LocalPort 1434 -Action allow
+New-NetFirewallRule -DisplayName “SQL Service Broker” -Direction Inbound –Protocol TCP –LocalPort 4022 -Action allow
+New-NetFirewallRule -DisplayName “SQL Debugger/RPC” -Direction Inbound –Protocol TCP –LocalPort 135 -Action allow
+#Enabling SQL Analysis Ports
+New-NetFirewallRule -DisplayName “SQL Analysis Services” -Direction Inbound –Protocol TCP –LocalPort 2383 -Action allow
+New-NetFirewallRule -DisplayName “SQL Browser” -Direction Inbound –Protocol TCP –LocalPort 2382 -Action allow
+#Enabling Misc. Applications
+New-NetFirewallRule -DisplayName “HTTP” -Direction Inbound –Protocol TCP –LocalPort 80 -Action allow
+New-NetFirewallRule -DisplayName “SSL” -Direction Inbound –Protocol TCP –LocalPort 443 -Action allow
+New-NetFirewallRule -DisplayName “SQL Server Browse Button Service” -Direction Inbound –Protocol UDP –LocalPort 1433 -Action allow
+#Enable Windows Firewall
+Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow -NotifyOnListen True -AllowUnicastResponseToMulticast True
+
+Stop-Service -Name 'MSSQLSERVER' -FORCE
+Start-Service -Name 'MSSQLSERVER
+set-service sqlbrowser -startuptype automatic 
+Start-Service -Name sqlbrowser
+
+sqlcmd -S DESKTOP-5K4TURF\SQLEXPRESS -E
+select name from sys.databases
+Backup-SqlDatabase -ServerInstance [Computer\Instance] -Database [Database name]
+ -BackupAction Database 
+ Backup-SqlDatabase -ServerInstance [Computer\Instance] -Database [Database name]
+ -BackupAction Database 
+ 
+ 
+ 
+AutoSPInstallerLaunch.bat will launch a PowerShell window that will install SharePoint and configure the farm using as an input the 
+Input Fiel of AutoSPInstaller: AutoSPInstaller XML 
+ 
+ FW01-SP\SP
+SharePoint_config
+host the Central Administration Web Application
+http://fw01-sp:48855/
+
+"TMMR-wss-W1-01\SPSrvAcc GR-SP-ADM
+
+TrendMicr0!
+testlab
+Single-Farm Sever
+NTLM
+
+
+
+get-windwosoptionalfeature -online -featurename IIS-CGI
+Enable-WindowsOptionalFeature -Online -FeatureName "IIS-CGI" -All
+
+
+https://files.trendmicro.com/products/portalprotect/2.6/pp-v2.6-b1037.zip
+
+run setup as azureuser
+C:\Users\azureuser\Desktop\pp-v2.6-b1037\PP\Setup.exe /r
+accept
+for Sharepoitn farm server or standalone
+fresh installatino / Upgrade / Uninstall
+AC
+C$ / Default Path c:\Program Files\Trend Micro\PortalProtect
+3 / 16373
+User defined SQL Server / SQL SErveIP /   Windows Authentication / TMMR-wss-W16-01\SPSrvAcc / testlab / CreateDb or use existing
+/ Sharepoint Server / Windows Authentication / TMMR-wss-W16-01\SPSrvAcc / testlab / CreateDb or use existing
+AD Group / local Server Admin Group
+User Proxy
+REgister to TMCM
+Send email based notifications
+
+C:\Users\azureuser\Desktop\pp-v2.6-b1037\PP\Setup.exe /s /f1 "C:\Users\azureuser\Desktop\Setup-Po
+rtalProtect.iss"
+
+
+
