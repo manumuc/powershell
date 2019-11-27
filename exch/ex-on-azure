@@ -1,0 +1,216 @@
+# Source: https://docs.microsoft.com/en-us/exchange/plan-and-deploy/deploy-new-installations/create-azure-test-environments?view=exchserver-2019
+https://docs.microsoft.com/en-us/exchange/plan-and-deploy/deploy-new-installations/unattended-installs?view=exchserver-2019
+https://docs.microsoft.com/en-us/exchange/plan-and-deploy/post-installation-tasks/post-installation-tasks?view=exchserver-2019
+
+
+# EX2019: DC: 2012 R2 / 2016 / 2019
+# AD Forest 2012 R2 ++
+# Install on AD is not recommended
+# page file: 25% of mem
+# 30 GB free space needed; 200 MB on C:; 500 MB for msg queue
+# only on W2019!; can be win Core
+# Office Client: O365, O2019/2016/2013, 
+# on Win7 KB3140245 Reg Keys are neede to enalbe TLS 1.1 u. 1.2
+- basis and common starting point 
+- demonstrate Exchange
+- develop Exchange Server application
+- internal email and applicaton testing
+
+1x AD domain controller
+1x Exch server
+cannot use Azure Active Directory Domain Services
+Exchange in Azure
+User Poweshell or Azure Powershell
+
+1, SEt up virtual network 
+2, set up AD DC (DC1)
+3, set up Exchange  (EX1)
+4, Configure Exchange
+
+# $Variables=" "
+# $AZSubscrN=" "
+# $AZLoc=" "
+# $AZResGrp=" "
+# $AZStorAcc=" "
+# $vmDnsName="<DNS name to test>"
+# $vmDcName="<DNS name to test>"
+# $vmEx
+# $vmExDnsN=" "
+# $vmExN="Ex1"
+# $vmExSize="StandardD_v2"
+# $vmExNicN=$vmExN + "-NIC"
+# $ExPIpN=$vmEXName + "-PublicIP"
+
+
+
+
+# AzUsr=AzureUser
+# AZPwd=P@ss.W0rd
+# Logon to Azure
+
+Connect-AzAccount
+#Get Subscriptions
+Get-AZSubscription | Sort SubscriptionName | Select SubscriptionName
+
+# 
+$AzureUser / P@ss.W0rd="<subscription name>"
+Select-AzSubscription -SubscriptionName $subscrName
+#
+$subscrName="<subscription name>"
+Select-AzSubscription -SubscriptionName $subscrName
+
+# Create new resource Group
+Get-AZResourceGroup | Sort ResourceGroupName | Select ResourceGroupName
+#
+$rgName="<resource group name>"
+$locName="<location name, such as West US>"
+New-AZResourceGroup -Name $rgName -Location $locName
+
+# Storage Account
+Get-AZStorageAccount | Sort StorageAccountName | Select StorageAccountName
+#
+Get-AZStorageAccountNameAvailability "<proposed name>"
+#
+$rgName="<your new resource group name>"
+$saName="<storage account name>"
+$locName=(Get-AZResourceGroup -Name $rgName).Location
+New-AZStorageAccount -Name $saName -ResourceGroupName $rgName -Type Standard_LRS -Location $locName
+
+#
+
+$rgName="<name of your new resource group>"
+$locName=(Get-AZResourceGroup -Name $rgName).Location
+$exSubnet=New-AZVirtualNetworkSubnetConfig -Name EXSrvrSubnet -AddressPrefix 192.168.0.0/16
+New-AZVirtualNetwork -Name EXSrvrVnet -ResourceGroupName $rgName -Location $locName -AddressPrefix 192.168.1.0/16 -Subnet $exSubnet -DNSServer 192.168.0.2/16
+$rule1 = New-AZNetworkSecurityRuleConfig -Name "RDPTraffic" -Description "Allow RDP to all VMs on the subnet" -Access Allow -Protocol Tcp -Direction Inbound -Priority 100 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 3389
+$rule2 = New-AZNetworkSecurityRuleConfig -Name "ExchangeSecureWebTraffic" -Description "Allow HTTPS to the Exchange server" -Access Allow -Protocol Tcp -Direction Inbound -Priority 101 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix "192.168.1.2" -DestinationPortRange 443
+$rule2 = New-AZNetworkSecurityRuleConfig -Name "DSAgentPort4118" -Description "Allow to send Information to the DS Agents" -Access Allow -Protocol Tcp -Direction Inbound -Priority 102 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 4118
+
+New-AZNetworkSecurityGroup -Name EXSrvrSubnet -ResourceGroupName $rgName -Location $locName -SecurityRules $rule1, $rule2, $rule3
+$vnet=Get-AZVirtualNetwork -ResourceGroupName $rgName -Name EXSrvrVnet
+$nsg=Get-AZNetworkSecurityGroup -Name EXSrvrSubnet -ResourceGroupName $rgName
+Set-AZVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name EXSrvrSubnet -AddressPrefix "192.168.1.0/16" -NetworkSecurityGroup $nsg
+$vnet | Set-AzVirtualNetwork
+
+# Create AD Controller
+$rgName="<resource group name>"
+# Create an availability set for domain controller virtual machines
+New-AZAvailabilitySet -ResourceGroupName $rgName -Name dcAvailabilitySet -Location $locName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
+# Create the domain controller virtual machine
+$vnet=Get-AZVirtualNetwork -Name EXSrvrVnet -ResourceGroupName $rgName
+$pip = New-AZPublicIpAddress -Name adVM-NIC -ResourceGroupName $rgName -Location $locName -AllocationMethod Dynamic
+$nic = New-AZNetworkInterface -Name adVM-NIC -ResourceGroupName $rgName -Location $locName -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -PrivateIpAddress 10.0.0.4
+$avSet=Get-AZAvailabilitySet -Name dcAvailabilitySet -ResourceGroupName $rgName
+$vm=New-AZVMConfig -VMName adVM -VMSize Standard_D1_v2 -AvailabilitySetId $avSet.Id
+$vm=Set-AZVMOSDisk -VM $vm -Name adVM-OS -DiskSizeInGB 128 -CreateOption FromImage -StorageAccountType "Standard_LRS"
+$diskConfig=New-AZDiskConfig -AccountType "Standard_LRS" -Location $locName -CreateOption Empty -DiskSizeGB 20
+$dataDisk1=New-AZDisk -DiskName adVM-DataDisk1 -Disk $diskConfig -ResourceGroupName $rgName
+$vm=Add-AZVMDataDisk -VM $vm -Name adVM-DataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
+$cred=Get-Credential -Message "Type the name and password of the local administrator account for adVM."
+$vm=Set-AZVMOperatingSystem -VM $vm -Windows -ComputerName adVM -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+$vm=Set-AZVMSourceImage -VM $vm -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2012-R2-Datacenter -Version "latest"
+$vm=Add-AZVMNetworkInterface -VM $vm -Id $nic.Id
+New-AZVM -ResourceGroupName $rgName -Location $locName -VM $vm
+
+
+# disks
+$disk=Get-Disk | where {$_.PartitionStyle -eq "RAW"}
+$diskNumber=$disk.Number
+Initialize-Disk -Number $diskNumber
+New-Partition -DiskNumber $diskNumber -UseMaximumSize -AssignDriveLetter
+Format-Volume -DriveLetter F
+
+Add-WindowsFeature RSAT-ADDS-Tools
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName corp.contoso.com -DatabasePath "F:\NTDS" -SysvolPath "F:\SYSVOL" -LogPath "F:\Logs"
+
+# restart DC1
+
+# Set up key variables
+$subscrName="<name of your Azure subscription>"
+$rgName="<your resource group name>"
+$vmDNSName="<unique, public DNS name for the Exchange server>"
+# Set the Azure subscription
+Select-AzSubscription -SubscriptionName $subscrName
+# Get the Azure location and storage account names
+$locName=(Get-AZResourceGroup -Name $rgName).Location
+$saName=(Get-AZStorageaccount | Where {$_.ResourceGroupName -eq $rgName}).StorageAccountName
+# Create an availability set for Exchange virtual machines
+New-AZAvailabilitySet -ResourceGroupName $rgName -Name exAvailabilitySet -Location $locName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
+# Specify the virtual machine name and size
+$vmName="exVM"
+$vmSize="Standard_D3_v2"
+$vnet=Get-AZVirtualNetwork -Name "EXSrvrVnet" -ResourceGroupName $rgName
+$avSet=Get-AZAvailabilitySet -Name exAvailabilitySet -ResourceGroupName $rgName
+$vm=New-AZVMConfig -VMName $vmName -VMSize $vmSize -AvailabilitySetId $avSet.Id
+# Create the NIC for the virtual machine
+$nicName=$vmName + "-NIC"
+$pipName=$vmName + "-PublicIP"
+$pip=New-AZPublicIpAddress -Name $pipName -ResourceGroupName $rgName -DomainNameLabel $vmDNSName -Location $locName -AllocationMethod Dynamic
+$nic=New-AZNetworkInterface -Name $nicName -ResourceGroupName $rgName -Location $locName -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -PrivateIpAddress "10.0.0.5"
+# Create and configure the virtual machine
+$cred=Get-Credential -Message "Type the name and password of the local administrator account for exVM."
+$vm=Set-AZVMOSDisk -VM $vm -Name ($vmName +"-OS") -DiskSizeInGB 128 -CreateOption FromImage -StorageAccountType "Standard_LRS"
+$vm=Set-AZVMOperatingSystem -VM $vm -Windows -ComputerName $vmName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+$vm=Set-AZVMSourceImage -VM $vm -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2019-Datacenter -Version "latest"
+$vm=Add-AZVMNetworkInterface -VM $vm -Id $nic.Id
+New-AZVM -ResourceGroupName $rgName -Location $locName -VM $vm
+
+# 
+Add-Computer -DomainName "corp.contoso.com"
+Restart-Computer
+
+# get internet DNS name
+Write-Host (Get-AZPublicIpaddress -Name "exVM-PublicIP" -ResourceGroup $rgName).DnsSettings.Fqdn
+# Domians and trust - add this name to Alternative UPN suffixes
+
+# install Exch
+Install-WindowsFeature NET-Framework-45-Features, RPC-over-HTTP-proxy, RSAT-Clustering, RSAT-Clustering-CmdInterface, RSAT-Clustering-Mgmt, RSAT-Clustering-PowerShell, Web-Mgmt-Console, WAS-Process-Model, Web-Asp-Net45, Web-Basic-Auth, Web-Client-Auth, Web-Digest-Auth, Web-Dir-Browsing, Web-Dyn-Compression, Web-Http-Errors, Web-Http-Logging, Web-Http-Redirect, Web-Http-Tracing, Web-ISAPI-Ext, Web-ISAPI-Filter, Web-Lgcy-Mgmt-Console, Web-Metabase, Web-Mgmt-Console, Web-Mgmt-Service, Web-Net-Ext45, Web-Request-Monitor, Web-Server, Web-Stat-Compression, Web-Static-Content, Web-Windows-Auth, Web-WMI, Windows-Identity-Foundation, RSAT-ADDS-Tools
+Restart-Computer
+
+# Click IE Sec Configuration / IE Enhanced SEc Conf / Off
+Install Unifed Communicaton Manage API 4.0 Runtime from:
+https://www.microsoft.com/download/details.aspx?id=34992
+# run command
+# download latest Exchange: 
+https://docs.microsoft.com/en-us/exchange/new-features/build-numbers-and-release-dates?view=exchserver-2019&wt.mc_id=MVP
+2016U13:
+https://download.microsoft.com/download/f/4/e/f4e4b3a0-925b-4eff-8cc7-8b5932d75b49/ExchangeServer2016-x64-cu14.iso
+# mount iso file to local
+
+# /Roles: or /r:
+# Role: MT: Mailbox, ET for Edge Transport, MT or T for Mangement Tools
+e:
+.\setup.exe /mode:Install /role:Mailbox,ManagementTools /OrganizationName:TMMR-E2016 /IacceptExchangeServerLicenseTerms /PrepareAD /PrepareSchema / PrepareDomain: /TargetDir:"C:\Exchange Server"
+
+Restart-Computer
+
+# add Mailboxes
+$dnsName="<Internet DNS name of the exVM virtual machine>"
+$user1Name="chris@" + $dnsName
+$user2Name="janet@" + $dnsName
+$db=Get-MailboxDatabase
+$dbName=$db.Name
+$password = Read-Host "Enter password" -AsSecureString
+# record passwoard and create mailboxes
+New-Mailbox -UserPrincipalName $user1Name -Alias chris -Database $dbName -Name ChrisAshton -OrganizationalUnit Users -Password $password -FirstName Chris -LastName Ashton -DisplayName "Chris Ashton"
+
+# test email delivery between mailboxes
+# Browser: https://<internetname EX1>/owa
+# New / To / user-Search Dir/Subject / Type message / Send
+
+
+
+
+New-Mailbox -UserPrincipalName $user2Name -Alias janet -Database $dbName -Name JanetSchorr -OrganizationalUnit Users -Password $password -FirstName Janet -LastName Schorr -DisplayName "Janet Schorr"
+
+# Stop VMSize
+$rgName="<your resource group name>"
+Stop-AZVM -Name exVM -ResourceGroupName $rgName -Force
+Stop-AZVM -Name adVM -ResourceGroupName $rgName -Force
+
+# Start Vms
+$rgName="<your resource group name>"
+Start-AZVM -Name adVM -ResourceGroupName $rgName
+Start-AZVM -Name exVM -ResourceGroupName $rgName
+
