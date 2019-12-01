@@ -32,14 +32,17 @@ User Poweshell or Azure Powershell
 # $AZLoc=" "
 # $AZResGrp=" "
 # $AZStorAcc=" "
-# $vmDnsName="<DNS name to test>"
-# $vmDcName="<DNS name to test>"
-# $vmEx
-# $vmExDnsN=" "
-# $vmExN="Ex1"
+# $vmDC1DnsN="<DNS name to test>"
+# $vmEx1DnsN=" "
+# $vmDc1Name="<DNS name to test>"
+# $vmEx1Name="<DNS name to test>"
+# $vmEx2DnsN=" "
+# $vmDc1N="Dc1"
+# $vmEx1N="Ex1"
+# $vmEx1N="Ex2"
 # $vmExSize="StandardD_v2"
-# $vmExNicN=$vmExN + "-NIC"
-# $ExPIpN=$vmEXName + "-PublicIP"
+# $vmEx1NicN=$vmEx1N + "-Nic"
+# $vmEx1PIpN=$vmEXName + "-PublicIP"
 
 
 # AzUsr=AzureUser
@@ -73,7 +76,7 @@ $RgName="Rg01Mail"
 $LocName="westeurope"
 New-AZResourceGroup -Name $RgName -Location $locName
 
-Get-Rexourcegroup
+Get-AZResourcegroup
 
 # Remove Resource Group
 Get-AzureRmResourceGroup -Name $RgName | Remove-AzureRmResourceGroup -Verbose -Force
@@ -84,34 +87,28 @@ Get-AZStorageAccount | Sort StorageAccountName | Select StorageAccountName
 #
 Get-AZStorageAccountNameAvailability "<proposed name>"
 #
-$rgName="<your new resource group name>"
-$saName="<storage account name>"
+
+$StorAccName="<storage account name>"
 $locName=(Get-AZResourceGroup -Name $rgName).Location
 New-AZStorageAccount -Name $saName -ResourceGroupName $rgName -Type Standard_LRS -Location $locName
 
 #
 
 #$RgName="<name of your new resource group>"
-$Vn01Name = "VN01-EXSrvr"
+$Vn01N = "VN01-Mail"
 $Vn01AddrPref="192.168.0.0/16"
-$VnSub01Name="VNSub01-EXSrvr"
-$VnSub01NsgName="VNSub01NSG-EXSrvr"
-#$LocName=(Get-AZResourceGroup -Name $rgName).Location
-$Vn01DMZ = New-AzVirtualNetworkSubnetConfig -Name DMZSubnet -AddressPrefix "192.168.0.0/24" -NatGatewayID="192.168.0.1"
-$Vn01FrontSn = New-AzVirtualNetworkSubnetConfig -Name FrontEndSubnet -AddressPrefix "192.168.1.0/24" -NatGatewayID="192.168.1.1"
-$Vn01BackSn  = New-AzVirtualNetworkSubnetConfig -Name BackEndSubnet  -AddressPrefix "192.168.2.0/24" -NatGatewayID="192.168.2.1"
-$Vn01ClientSn  = New-AzVirtualNetworkSubnetConfig -Name ClientSubnet  -AddressPrefix "192.168.3.0/24" -NatGatewayID="192.168.3.1"
-$ExSubnet=New-AZVirtualNetworkSubnetConfig -Name $VnSub01Name -AddressPrefix $vn01AddrPref
-$DnsSrvrList="8.8.4.4,8.8.8.8"
-$DcSrvrName="DC1"
-$DCSrvrPrivIP="192.168.1.10"
-$ExchSrvrName1="EX1"
-$ExchSrvrPrivIp1="192.168.1.20"
-$ExchSrvrName2="EX2"
-$ExchSrvrPrivIP2="192.168.1.25"
+$Vn01Sub01N="Vn01Sub01-Mail"
+$Vn01Sub01AddrPref="192.168.0.0/16"
+$Vn01Sub01Gw="192.168.0.1"
+$Vn01Sub01NsgN="Vn01Sub01NSG-Mail"
+$Vn01DnsSrvrList="8.8.4.4,8.8.8.8"
 
-New-AzVirtualNetwork -Name $Vn01Name -ResourceGroupName $RgName -Location $LocName -AddressPrefix $Vn01AddrPref -Subnet $Vn01FrontSn,$Vn01BackSn -DNSServer $DnsSrvrList
-# New-AZVirtualNetwork -Name $Vn01Name -ResourceGroupName $RgName -Location $LocName -AddressPrefix $vn01AddrPref -Subnet $exSubnet -DNSServer 192.168.0.2/16
+$Vn01Sub01Obj  = New-AzVirtualNetworkSubnetConfig -Name $Vn01Sub01N -AddressPrefix $Vn01Sub01AddrPref
+#$Vn01DMZ      = New-AzVirtualNetworkSubnetConfig -Name DMZSubnet -AddressPrefix "192.168.0.0/24" -NatGatewayID="192.168.0.1"
+#$Vn01FrontSn  = New-AzVirtualNetworkSubnetConfig -Name FrontEndSubnet -AddressPrefix "192.168.1.0/24" -NatGatewayID="192.168.1.1"
+#$Vn01BackSn   = New-AzVirtualNetworkSubnetConfig -Name BackEndSubnet  -AddressPrefix "192.168.2.0/24" -NatGatewayID="192.168.2.1"
+#$Vn01ClientSn = New-AzVirtualNetworkSubnetConfig -Name ClientSubnet  -AddressPrefix "192.168.3.0/24" -NatGatewayID="192.168.3.1"
+#$ExSubnet     = New-AZVirtualNetworkSubnetConfig -Name $VnSub01Name -AddressPrefix $vn01AddrPref
 
 $rule143  = New-AZNetworkSecurityRuleConfig -Name "CP-IMAP143" -Description "Allow IN IMAP" -Access Allow -Protocol Tcp -Direction Inbound -Priority 100 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 143
 $rule20   = New-AZNetworkSecurityRuleConfig -Name "CP-SSH22" -Description "Allow IN SSH" -Access Allow -Protocol Tcp -Direction Inbound -Priority 101 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 20-21
@@ -123,22 +120,43 @@ $rule3389 = New-AZNetworkSecurityRuleConfig -Name "CP-RDP3389" -Description "All
 $rule4118 = New-AZNetworkSecurityRuleConfig -Name "CP-DS4118" -Description "Allow IN DS Agents" -Access Allow -Protocol Tcp -Direction Inbound -Priority 107 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 4118
 $rule443  = New-AZNetworkSecurityRuleConfig -Name "CP-HTTPS443" -Description "Allow IN HTTPS" -Access Allow -Protocol Tcp -Direction Inbound -Priority 108 -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 443
 
-New-AZNetworkSecurityGroup -Name $VnSub01NsgName -ResourceGroupName $RgName -Location $LocName -SecurityRules $rule80, $rule443, $rule3389,$rule4118
-$vnet=Get-AZVirtualNetwork -ResourceGroupName $rgName -Name $VnSub01Name
-$nsg=Get-AZNetworkSecurityGroup -Name $Vn01Name -ResourceGroupName $rgName
-Set-AZVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $Vn01Name -AddressPrefix "192.168.1.0/16" -NetworkSecurityGroup $nsg
+$Vn01NsgObj = New-AZNetworkSecurityGroup -Name $Vn01NsgN -ResourceGroupName $RgName -Location $LocName -SecurityRules $rule443, $rule3389,$rule4118
+#$Vn01NsgObj = Get-AZNetworkSecurityGroup -Name $Vn01NsgN 
+
+$Vn01Sub01Obj = New-AzVirtualNetworkSubnetConfig -Name $VN01Sub01N -AddressPrefix $Vn01Sub01AddrPref
+#$Vn01Sub01Obj = Get-AzVirtualNetworkSubnetConfig -Name $Vn01Sub01N -VirtualNetwork $Vn01Obj
+
+$Vn01Obj = New-AzVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Location $LocName -AddressPrefix $Vn01AddrPref -Subnet $Vn01Sub01Obj
+# $Vn01Obj = Get-AZVirtualNetwork -Name $Vn01
+# New-AzVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Location $LocName -AddressPrefix $Vn01AddrPref -Subnet $Vn01FrontSn,$Vn01BackSn
+# New-AZVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Location $LocName -AddressPrefix $Vn01AddrPref -Subnet $exSubnet
+
+
+$DcSrvrName="DC1"
+$DCSrvrPrivIP="192.168.1.10"
+$ExchSrvrName1="EX1"
+$ExchSrvrPrivIp1="192.168.1.20"
+$ExchSrvrName2="EX2"
+$ExchSrvrPrivIP2="192.168.1.25"
+
+$vnet=Get-AZVirtualNetwork -ResourceGroupName $rgName -Name $Vn01Name
+
+
+Set-AZVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $Vn01Name -AddressPrefix "192.168.0.0/16" -NetworkSecurityGroup $nsg
 $vnet | Set-AzVirtualNetwork
+# $Vn01Sub01Obj = Get-AzVirtualNetworkSubnetConfig -Name $Vn01Sub01N -VirtualNetwork $Vn01Obj
+
 
 # Create AD Controller
-#$rgName="<resource group name>"
+#$RgName="<resource group name>"
 $DCAvSet="DcAvailabilitySet"
 $DcVmPubNic="DcVmPubNic"
 $DcVmNic="DcVmNic"
 # Create an availability set for domain controller virtual machines
-New-AZAvailabilitySet -ResourceGroupName $rgName -Name dcAvailabilitySet -Location $locName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
+New-AZAvailabilitySet -ResourceGroupName $RgName -Name DcAvailabilitySet -Location $LocName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
 # Create the domain controller virtual machine
-$vnet=Get-AZVirtualNetwork -Name $Vn01Name $VnSub01Name -ResourceGroupName $rgName
-$VmPip = New-AZPublicIpAddress -Name $DcVmPubNic-ResourceGroupName $rgName -Location $LocName -AllocationMethod Dynamic
+$vnet=Get-AZVirtualNetwork -Name $Vn01Name -ResourceGroupName $RgName
+$VmPip = New-AZPublicIpAddress -Name $DcVmPubNic -ResourceGroupName $RgName -Location $LocName -AllocationMethod Dynamic
 $VmNic = New-AZNetworkInterface -Name $DcVmNic -ResourceGroupName $rgName -Location $LocName -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -PrivateIpAddress $DCSrvrPrivIP
 $VmAvSet=Get-AZAvailabilitySet -Name $DcVmNic -ResourceGroupName $rgName
 $Vm=New-AZVMConfig -VMName $DcSrvrName -VMSize Standard_D1_v2 -AvailabilitySetId $avSet.Id
