@@ -132,7 +132,6 @@ $Vn01Obj = New-AzVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Locatio
 # New-AZVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Location $LocName -AddressPrefix $Vn01AddrPref -Subnet $exSubnet
 
 
-
 $DcSrvrName="DC1"
 $DCSrvrPrivIP="192.168.1.10"
 $DCAvailSetN="DcAvailabilitySet"
@@ -146,20 +145,21 @@ $ExchSrvrPrivIP2="192.168.1.25"
 
 # Create AD Controller
 # Create an availability set for domain controller virtual machines
-VmAvSetObj = New-AZAvailabilitySet -ResourceGroupName $RgName -Name $DcAvailSetN -Location $LocName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
+# $VmAvSetObj = New-AZAvailabilitySet -ResourceGroupName $RgName -Name $DcAvailSetN -Location $LocName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
 # Create the domain controller virtual machine
 $VmPIpObj = New-AZPublicIpAddress -Name $DcVmPubNic -ResourceGroupName $RgName -Location $LocName -AllocationMethod Dynamic
 $VmNicObj = New-AZNetworkInterface -Name $DcVmNic -ResourceGroupName $RgName -Location $LocName -SubnetId $Vn01Obj.Subnets[0].Id -PublicIpAddressId $VmPIpObj.Id -PrivateIpAddress $DCSrvrPrivIp
-$VmAvSetObj = Get-AZAvailabilitySet -Name  $DcAvailSetN -ResourceGroupName $RgName
-$VmObj = New-AZVMConfig -VMName $DcSrvrName -VMSize Standard_D1_v2 -AvailabilitySetId $VmAvSetObj.Id
-$VmObj = Set-AZVMOSDisk -VM $VmObj -Name DcVmOs -DiskSizeInGB 64 -CreateOption FromImage -StorageAccountType "Standard_LRS"
+#$VmAvSetObj = Get-AZAvailabilitySet -Name  $DcAvailSetN -ResourceGroupName $RgName
+$VmObj = New-AZVMConfig -VMName $DcSrvrName -VMSize Standard_D1_v2 
+# -AvailabilitySetId $VmAvSetObj.Id
+#$VmObj = Set-AZVMOSDisk -VM $VmObj -Name DcVmOs -DiskSizeInGB 64 -CreateOption FromImage -StorageAccountType "Standard_LRS"
 #$VmDdiskConfig = New-AZDiskConfig -AccountType "Standard_LRS" -Location $LocName -CreateOption Empty -DiskSizeGB 20
 #$VmDataDisk1 = New-AZDisk -DiskName DcVmDataDisk1 -Disk $diskConfig -ResourceGroupName $rgName
 #$VmObj = Add-AZVMDataDisk -VM $Vm -Name DcVmDataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
 $VmCredObj = Get-Credential -Message "Type the name and password of the local administrator account for DcVm."
 $VmObj = Set-AZVMOperatingSystem -VM $VmObj -Windows -ComputerName $DcSrvrName -Credential $VmCredObj -ProvisionVMAgent -EnableAutoUpdate
 $VmObj = Set-AZVMSourceImage -VM $VmObj -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2012-R2-Datacenter -Version "latest"
-$CmObj = Add-AZVMNetworkInterface -VM $VmObj -Id $VmNicObj.Id
+$VmObj = Add-AZVMNetworkInterface -VM $VmObj -Id $VmNicObj.Id
 New-AZVM -ResourceGroupName $RgName -Location $LocName -VM $VmObj
 
 
