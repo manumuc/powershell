@@ -76,21 +76,21 @@ $RgName="Rg01Mail"
 $LocName="westeurope"
 New-AZResourceGroup -Name $RgName -Location $locName
 
-Get-AZResourcegroup
+# Get-AZResourcegroup
 
 # Remove Resource Group
-Get-AzureRmResourceGroup -Name $RgName | Remove-AzureRmResourceGroup -Verbose -Force
+# Get-AzureRmResourceGroup -Name $RgName | Remove-AzureRmResourceGroup -Verbose -Force
 # 
 
 # Storage Account
-Get-AZStorageAccount | Sort StorageAccountName | Select StorageAccountName
+#Get-AZStorageAccount | Sort StorageAccountName | Select StorageAccountName
 #
-Get-AZStorageAccountNameAvailability "<proposed name>"
+# Get-AZStorageAccountNameAvailability "<proposed name>"
 #
 
-$StorAccName="<storage account name>"
-$locName=(Get-AZResourceGroup -Name $rgName).Location
-New-AZStorageAccount -Name $saName -ResourceGroupName $rgName -Type Standard_LRS -Location $locName
+#$StorAccName="<storage account name>"
+#$locName=(Get-AZResourceGroup -Name $rgName).Location
+#New-AZStorageAccount -Name $saName -ResourceGroupName $rgName -Type Standard_LRS -Location $locName
 
 #
 
@@ -134,34 +134,64 @@ $Vn01Obj = New-AzVirtualNetwork -Name $Vn01N -ResourceGroupName $RgName -Locatio
 
 $DcSrvrName="DC1"
 $DCSrvrPrivIP="192.168.1.10"
+$DcVmSize = "Standard_A1_v2"
+$DcPublisherName ="MicrosoftWindowsServer"
+$DcVmOffer = "WindowsServer"
+$DcVmSku ="2012-R2-Datacenter"
+$DcVmOsVer ="latest"
+
 $DCAvailSetN="DcAvailabilitySet"
 $DcVmPubNic="DcVmPubNic"
-$DcVmNic="DcVmNic"
+$DcVmNicN="DcVmNic"
+$DcVmIpConfN = "DcVmIp1Conf"
+$DcVmIpConfObj = New-AzNetworkInterfaceIpConfig -Name $DcVmIp1ConfN -Subnet $Subnet -PrivateIpAddress $DCSrvrPrivIP -Primary
+
+$NIC = New-AzNetworkInterface `
+  -Name MyNIC `
+  -ResourceGroupName $RgName `
+  -Location $Location `
+  -IpConfiguration $IpConfig1
+
 
 $ExchSrvrName1="EX1"
 $ExchSrvrPrivIp1="192.168.1.20"
 $ExchSrvrName2="EX2"
 $ExchSrvrPrivIP2="192.168.1.25"
 
+# Get-AzVM
+# Get-AzVM -ResourceGroupName $RgNam
+# Get-AzVM -ResourceGroupName $RgName -Name $DcSrvrName -Status
+
 # Create AD Controller
 # Create an availability set for domain controller virtual machines
 # $VmAvSetObj = New-AZAvailabilitySet -ResourceGroupName $RgName -Name $DcAvailSetN -Location $LocName -Sku Aligned  -PlatformUpdateDomainCount 5 -PlatformFaultDomainCount 2
 # Create the domain controller virtual machine
 $VmPIpObj = New-AZPublicIpAddress -Name $DcVmPubNic -ResourceGroupName $RgName -Location $LocName -AllocationMethod Dynamic
-$VmNicObj = New-AZNetworkInterface -Name $DcVmNic -ResourceGroupName $RgName -Location $LocName -SubnetId $Vn01Obj.Subnets[0].Id -PublicIpAddressId $VmPIpObj.Id -PrivateIpAddress $DCSrvrPrivIp
+$VmNicObj = New-AZNetworkInterface -Name $DcVmNicN -ResourceGroupName $RgName -Location $LocName -SubnetId $Vn01Obj.Subnets[0].Id -PublicIpAddressId $VmPIpObj.Id -IpConfiguration $DcVmIpConfObj
+
+
 #$VmAvSetObj = Get-AZAvailabilitySet -Name  $DcAvailSetN -ResourceGroupName $RgName
-$VmObj = New-AZVMConfig -VMName $DcSrvrName -VMSize Standard_D1_v2 
+$VmObj = New-AZVMConfig -VMName $DcSrvrName -VMSize $DcVmSize 
 # -AvailabilitySetId $VmAvSetObj.Id
 #$VmObj = Set-AZVMOSDisk -VM $VmObj -Name DcVmOs -DiskSizeInGB 64 -CreateOption FromImage -StorageAccountType "Standard_LRS"
 #$VmDdiskConfig = New-AZDiskConfig -AccountType "Standard_LRS" -Location $LocName -CreateOption Empty -DiskSizeGB 20
 #$VmDataDisk1 = New-AZDisk -DiskName DcVmDataDisk1 -Disk $diskConfig -ResourceGroupName $rgName
-#$VmObj = Add-AZVMDataDisk -VM $Vm -Name DcVmDataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
-$VmCredObj = Get-Credential -Message "Type the name and password of the local administrator account for DcVm."
+#$VmObj = Add-AZVMDataDisk -VM $VmObj -Name DcVmDataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
+#$VmCredObj = Get-Credential -Message "Type the name and password of the local administrator account for Dc1 Vm."
+$SecPwdObj = ConvertTo-SecureString 'Pass.wOrd' -AsPlainText -Force
+$VmCredObj = New-Object System.Management.Automation.PSCredential ("AzureUser", $SecPwdObj)
+
+# ? -EnableProvisionVMAgent -Enable AutoUpdate
 $VmObj = Set-AZVMOperatingSystem -VM $VmObj -Windows -ComputerName $DcSrvrName -Credential $VmCredObj -ProvisionVMAgent -EnableAutoUpdate
-$VmObj = Set-AZVMSourceImage -VM $VmObj -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2012-R2-Datacenter -Version "latest"
+$VmObj = Set-AZVMSourceImage -VM $VmObj -PublisherName $DcPublisherName  -Offer $DcVmOffer -Skus $DcVmSku -Version $DcVmOsVer
 $VmObj = Add-AZVMNetworkInterface -VM $VmObj -Id $VmNicObj.Id
 New-AZVM -ResourceGroupName $RgName -Location $LocName -VM $VmObj
 
+
+$VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -ComputerName MyServerVM -ProvisionVMAgent -EnableAutoUpdate
+$VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id
+$VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName $DcPublisherName  -Offer 'WindowsServer' -Skus '2012-R2-Datacenter' -Version latest
+New-AzVM -ResourceGroupName $RgName -Location $Location -VM $VirtualMachine -Verbose
 
 # disks
 $disk=Get-Disk | where {$_.PartitionStyle -eq "RAW"}
@@ -202,7 +232,7 @@ $nic=New-AZNetworkInterface -Name $nicName -ResourceGroupName $rgName -Location 
 $cred=Get-Credential -Message "Type the name and password of the local administrator account for exVM."
 $vm=Set-AZVMOSDisk -VM $vm -Name ($vmName +"-OS") -DiskSizeInGB 128 -CreateOption FromImage -StorageAccountType "Standard_LRS"
 $vm=Set-AZVMOperatingSystem -VM $vm -Windows -ComputerName $vmName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
-$vm=Set-AZVMSourceImage -VM $vm -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2019-Datacenter -Version "latest"
+$vm=Set-AZVMSourceImage -VM $vm -PublisherName MicrosoftWindowsServer -Offer $DcVmOffer -Skus 2019-Datacenter -Version "latest"
 $vm=Add-AZVMNetworkInterface -VM $vm -Id $nic.Id
 New-AZVM -ResourceGroupName $rgName -Location $locName -VM $vm
 
