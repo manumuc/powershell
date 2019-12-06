@@ -29,58 +29,47 @@ User Poweshell or Azure Powershell
 
 # $Variables=" "
 # $AZSubscrN=" "
-# $AZLoc=" "
-# $AZResGrp=" "
-# $AZStorAcc=" "
+# $AZLocN=" "
+# $AZResGrpN=" "
+# $AZStorAccN=" "
+
+# $vmDc1N="<DNS name to test>"
 # $vmDC1DnsN="<DNS name to test>"
-# $vmEx1DnsN=" "
-# $vmDc1Name="<DNS name to test>"
-# $vmEx1Name="<DNS name to test>"
-# $vmEx2DnsN=" "
 # $vmDc1N="Dc1"
+# $vmDCSize="Standard_v2"
+
+# $vmEx1N="<DNS name to test>"
+# $vmEx1DnsN=" "
 # $vmEx1N="Ex1"
-# $vmEx1N="Ex2"
 # $vmExSize="StandardD_v2"
 # $vmEx1NicN=$vmEx1N + "-Nic"
 # $vmEx1PIpN=$vmEXName + "-PublicIP"
-
+# $vmEx2N="<DNS name to test>"
+# $vmEx2DnsN=" "
+# $vmEx2N="Ex2"
 
 # AzUsr=AzureUser
-# AZPwd=P@ss.W0rd
+# AZPwd=Pass.W0rd
 # Logon to Azure
 
-Connect-AzAccount
+#Connect-AzAccount
 #Get Subscriptions
 Get-AZSubscription 
-#| Sort SubscriptionName | Select SubscriptionName
-
 # Set Subcription Name
-Get-AzSubscription -SubscriptionName "MSDN/Prof/Ent" | Set-AZContext
-
-$AzureUser / P@ss.W0rd="<subscription name>"
-Select-AzSubscription -SubscriptionName $subscrName
-#
 $subscrName="<subscription name>"
-Select-AzSubscription -SubscriptionName $subscrName
-# List Subscription
-Get-AZContext 
-
+Get-AzSubscription -SubscriptionName "MSDN/Prof/Ent" | Set-AZContext
 # Set subscription by Name
-Set-AzContext -SubscriptionName "Company Subscription"
+Set-AzContext -SubscriptionName $subscrName
+# List Subscription
+Get-AZContext
 
-# Create new resource Group
-Get-AZResourceGroup | Sort ResourceGroupName | Select ResourceGroupName
+
 #$RgName="<resource group name>"
 $RgName="Rg01Mail"
 #$LocName="<location name, such as West US>"
 $LocName="westeurope"
 New-AZResourceGroup -Name $RgName -Location $locName
-
 # Get-AZResourcegroup
-
-# Remove Resource Group
-# Get-AzureRmResourceGroup -Name $RgName | Remove-AzureRmResourceGroup -Verbose -Force
-# 
 
 # Storage Account
 #Get-AZStorageAccount | Sort StorageAccountName | Select StorageAccountName
@@ -144,14 +133,7 @@ $DCAvailSetN="DcAvailabilitySet"
 $DcVmPubNic="DcVmPubNic"
 $DcVmNicN="DcVmNic"
 $DcVmIpConfN = "DcVmIp1Conf"
-$DcVmIpConfObj = New-AzNetworkInterfaceIpConfig -Name $DcVmIp1ConfN -Subnet $Subnet -PrivateIpAddress $DCSrvrPrivIP -Primary
-
-$NIC = New-AzNetworkInterface `
-  -Name MyNIC `
-  -ResourceGroupName $RgName `
-  -Location $Location `
-  -IpConfiguration $IpConfig1
-
+$DcVmIpConfObj = New-AzNetworkInterfaceIpConfig -Name $DcVmIp1ConfN -Subnet $Vn01Sub01Obj -PrivateIpAddress $DCSrvrPrivIP -Primary
 
 $ExchSrvrName1="EX1"
 $ExchSrvrPrivIp1="192.168.1.20"
@@ -173,13 +155,14 @@ $VmNicObj = New-AZNetworkInterface -Name $DcVmNicN -ResourceGroupName $RgName -L
 #$VmAvSetObj = Get-AZAvailabilitySet -Name  $DcAvailSetN -ResourceGroupName $RgName
 $VmObj = New-AZVMConfig -VMName $DcSrvrName -VMSize $DcVmSize 
 # -AvailabilitySetId $VmAvSetObj.Id
-#$VmObj = Set-AZVMOSDisk -VM $VmObj -Name DcVmOs -DiskSizeInGB 64 -CreateOption FromImage -StorageAccountType "Standard_LRS"
-#$VmDdiskConfig = New-AZDiskConfig -AccountType "Standard_LRS" -Location $LocName -CreateOption Empty -DiskSizeGB 20
-#$VmDataDisk1 = New-AZDisk -DiskName DcVmDataDisk1 -Disk $diskConfig -ResourceGroupName $rgName
-#$VmObj = Add-AZVMDataDisk -VM $VmObj -Name DcVmDataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
-#$VmCredObj = Get-Credential -Message "Type the name and password of the local administrator account for Dc1 Vm."
+# $VmObj = Set-AZVMOSDisk -VM $VmObj -Name DcVmOs -DiskSizeInGB 64 -CreateOption FromImage -StorageAccountType "Standard_LRS"
+# $VmDdiskConfig = New-AZDiskConfig -AccountType "Standard_LRS" -Location $LocName -CreateOption Empty -DiskSizeGB 20
+# $VmDataDisk1 = New-AZDisk -DiskName DcVmDataDisk1 -Disk $diskConfig -ResourceGroupName $rgName
+# $VmObj = Add-AZVMDataDisk -VM $VmObj -Name DcVmDataDisk1 -CreateOption Attach -ManagedDiskId $dataDisk1.Id -Lun 1
+# $VmCredObj = Get-Credential -Message "Type the name and password of the local administrator account for Dc1 Vm."
 $SecPwdObj = ConvertTo-SecureString 'Pass.wOrd' -AsPlainText -Force
 $VmCredObj = New-Object System.Management.Automation.PSCredential ("AzureUser", $SecPwdObj)
+
 
 # ? -EnableProvisionVMAgent -Enable AutoUpdate
 $VmObj = Set-AZVMOperatingSystem -VM $VmObj -Windows -ComputerName $DcSrvrName -Credential $VmCredObj -ProvisionVMAgent -EnableAutoUpdate
@@ -193,6 +176,7 @@ $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id
 $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName $DcPublisherName  -Offer 'WindowsServer' -Skus '2012-R2-Datacenter' -Version latest
 New-AzVM -ResourceGroupName $RgName -Location $Location -VM $VirtualMachine -Verbose
 
+
 # disks
 $disk=Get-Disk | where {$_.PartitionStyle -eq "RAW"}
 $diskNumber=$disk.Number
@@ -200,9 +184,23 @@ Initialize-Disk -Number $diskNumber
 New-Partition -DiskNumber $diskNumber -UseMaximumSize -AssignDriveLetter
 Format-Volume -DriveLetter F
 
+
 Add-WindowsFeature RSAT-ADDS-Tools
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 Install-ADDSForest -DomainName corp.contoso.com -DatabasePath "F:\NTDS" -SysvolPath "F:\SYSVOL" -LogPath "F:\Logs"
+
+
+New-AzVm `
+    -ResourceGroupName $RgName `
+    -Name "SqlVm" `
+	  -ImageName "MicrosoftSQLServer:SQL2016SP1-WS2016:Enterprise:latest" `
+    -Location $LocName `
+    -VirtualNetworkName $vNetName `
+    -SubnetName "mySQLSubnet" `
+    -SecurityGroupName "myNetworkSecurityGroup" `
+    -PublicIpAddressName "mySQLPublicIpAddress" `
+    -OpenPorts 3389,1401 
+
 
 # restart DC1
 
@@ -286,11 +284,50 @@ New-Mailbox -UserPrincipalName $user2Name -Alias janet -Database $dbName -Name J
 
 # Stop VMSize
 $rgName="<your resource group name>"
-Stop-AZVM -Name exVM -ResourceGroupName $rgName -Force
-Stop-AZVM -Name adVM -ResourceGroupName $rgName -Force
+Stop-AZVM -Name ExVM -ResourceGroupName $rgName -Force
+Stop-AZVM -Name DcVM -ResourceGroupName $rgName -Force
 
 # Start Vms
 $rgName="<your resource group name>"
-Start-AZVM -Name adVM -ResourceGroupName $rgName
-Start-AZVM -Name exVM -ResourceGroupName $rgName
+Start-AZVM -Name DcVM -ResourceGroupName $rgName
+Start-AZVM -Name ExVM -ResourceGroupName $rgName
+
+Get-AzVMImagePublisher -Location "EastUS"
+Get-AzVMImageOffer `
+   -Location $locName `
+   -PublisherName "MicrosoftWindowsServer"
+  Get-AzVMImageSku `
+   -Location $locName `
+   -PublisherName "MicrosoftWindowsServer" `
+   -Offer "WindowsServer"
+
+Get-AzVM `
+    -ResourceGroupName "myResourceGroupVM" `
+    -Name "myVM" `
+    -Status | Select @{n="Status"; e={$_.Statuses[1].Code}}
+    
+Stop-AzVM `
+   -ResourceGroupName "myResourceGroupVM" `
+   -Name "myVM" -Force
+Set-AzVMExtension -ResourceGroupName "myResourceGroupAutomate" `
+    -ExtensionName "IIS" `
+    -VMName "myVM" `
+    -Location "EastUS" `
+    -Publisher Microsoft.Compute `
+    -ExtensionType CustomScriptExtension `
+    -TypeHandlerVersion 1.8 `
+    -SettingString '{"commandToExecute":"powershell Add-WindowsFeature Web-Server; powershell Add-Content -Path \"C:\\inetpub\\wwwroot\\Default.htm\" -Value $($env:computername)"}'
+    
+# Remove Resource Group
+# Get-AzureRmResourceGroup -Name $RgName | Remove-AzureRmResourceGroup -Verbose -Force 
+
+
+%windir%\system32\sysprep\sysprep.exe
+mstsc /v:publicIpAddress
+Install-WindowsFeature -name Web-Server -IncludeManagementTools
+
+Get-Disk | Where partitionstyle -eq 'raw' |
+    Initialize-Disk -PartitionStyle MBR -PassThru |
+    New-Partition -AssignDriveLetter -UseMaximumSize |
+    Format-Volume -FileSystem NTFS -NewFileSystemLabel "myDataDisk" -Confirm:$false
 
