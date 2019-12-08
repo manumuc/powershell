@@ -1,0 +1,37 @@
+$key = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt"
+Set-ItemProperty $key  DefaultValue 0
+
+$key = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt"
+Set-ItemProperty $key DefaultValue 1
+
+
+$key = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\"
+Set-ItemProperty $key HideFileExt  0
+Set-ItemProperty $key Hidden  1
+Set-ItemProperty $key ShowSuperHidden 1
+Set-ItemProperty $key DontPrettyPath 1
+
+$key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+Set-ItemProperty $key AlwaysShowMenus 1
+ 
+Set-ItemProperty $key Hidden 1
+
+Set-ItemProperty $key HideFileExt 0
+
+Set-ItemProperty $key HideMergeConflicts 1
+
+Set-ItemProperty $key PersistBrowsers 1
+
+Set-ItemProperty $key SeparateProcess 1
+
+Set-ItemProperty $key SharingWizardOn 0
+
+Set-ItemProperty $key ShowInfoTip 0
+
+Set-ItemProperty $key ShowStatusBar 1
+
+Set-ItemProperty $key ShowSuperHidden 1
+
+Set-ItemProperty $key 
+
+Stop-Process -processname explorer
