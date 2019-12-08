@@ -1,0 +1,6 @@
+
+REM Turns on "Computer" Desktop Icon
+$key = "HKU\%1\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"
+"{20D04FE0-3AEA-1069-A2D8-08002B30309D}" 0
+"{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" 0
+"{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" 0 
