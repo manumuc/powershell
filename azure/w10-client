@@ -1,0 +1,142 @@
+Supply value for the follwing paramter
+param
+(
+
+
+[string]$CsvFilePath
+    [Parameter(Mandatory)] 
+        [ValidateScript({
+        if (Test-Connection -ComputerName $_ -Quiet -Count 1) {
+            throw "The computer $($_) is available."
+        } else {
+            $true
+        }
+        })] 
+        [string[]]$HostNnew = "V06WKS007",
+        
+    [Parameter(Mandatory)]$UsrNnew,
+    [Parameter(Mandatory)]$UsrPwdnew,
+    [Parameter(Mandatory)]$IpAddr
+   [Parameter(Mandatory)]
+   [string[]]$NetAdaptN = "Ethernet0"
+    [Parameter(Mandatory)]
+    [ValidateScript({
+    if (-not (Test-Path -Path $_ -PathType Leaf)) {
+        $true
+    } else {
+        throw "The CSV file $($_) already exists."
+    }
+})]
+[string]$CsvFilePath = 'C:\ServerInventory.csv'
+    
+)
+
+
+password
+#\\Apexagetn01.course.nt; V06WKS007 greenhtis.net
+Win10 Ent 1809 (17763.1)
+c:\win
+
+# Echo the date for reference in the console output            
+Get-Date 
+
+# set Region Date settings 
+# set language input
+Set-WinUserLanguageList -LanguageList en-US, de-De
+
+# set DNS Addresses
+get-netadapter -name $NetAdaptN | new-netipaddress -ipaddress "192.168.100.10" -PrefixLength 24 -DefaultGateway 192.168.100.1
+
+#set dns 
+Set-DnsClientServerAddress -InterfaceAlias $NetAdaptN -ServerAddresses 192.168.1.36, 8.8.8.8
+
+# set to prefer IPv4 before ipv6!
+#If the reply is IPv6 address, run following registry setting to just prefer ipv4 and reboot
+New-ItemProperty “HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\” -Name “DisabledComponents” -Value 0x20 -PropertyType “DWord”
+#If DisabledComponents exists, use the set cmdlet
+Set-ItemProperty “HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\” -Name “DisabledComponents” -Value 0x20
+#You need to reboot the computer in order for the changes to take effect
+
+#Windows Firewall
+
+Restart-Computer
+
+
+# get computername 
+# WKS Name V06WKS007
+$HostN = $env:computername
+$HostNnew = read-host -Input "To change old host name ("$HostN") enter new"
+if ($HostNnew) {
+	Write-Host "New Hostname " $HostNnew
+} else {
+	Write-Warning -Message "Old Name" $HostN "will be used"
+}
+
+$PwdNewV1 = read-host -Input "Enter new Pwd" -asSecureString
+$PwdNewV2 = read-host -Input "Enter new Pwd again" -asSecureString
+if ($PwdNewV1 = $PwdNewV2) {
+
+
+$IPAddrCur=Get-NetIPAddress -AddressFamily IPv4 -Filter *.*.*.*
+
+# Add Comupter to workgroup
+#Add comuter to greenthis.net
+Add-Computer -DomainName greenthis.net -Server v00dc001.greenthis.net -Credential (Get-Credential GREENTHIS\Administrator) -NewName "V06WKS007" -Restart
+
+
+
+
+
+# Desktop Icons
+# Now, about the GUIDs which in essence are DWORD values in the Registry. These GUID/DWord are:
+#-- For "My Computer" Icon ----- "{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
+# -- For "Control Panel" Icon ----- "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}"
+# -- For "Recycle Bin" Icon ----- "{645FF040-5081-101B-9F08-00AA002F954E}"
+# -- For "User File" Icon ----- "{59031a47-3f72-44a7-89c5-5595fe6b30ee}"
+# -- For "Network" Icon ----- "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}"
+# First, check for the presence of DWORD "HideIcons" in Registry Location: 
+"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced". 
+#if not present, create the DWORD "HideIcons" and assign it value 0 (zero). 
+# Secondly, check for the presence of the registry key 
+"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons". 
+# If not present, manually create the key.
+# Third, Create a New Key -- NewStartPanel -- under 
+"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons". 
+# Once created the path should be: 
+"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel".
+# Fourth, Inside this "NewStartPanel", all the above GUIDs/DWORD values have to be created and 
+each of these DWORDs should have a value of 0 (zero).
+
+
+# - or enable set remote desktop settings 
+cscript C:\Windows\System32\SCregEdit.wsf /ar 0
+# view remote desktop settings 
+cscript C:\Windows\System32\SCregEdit.wsf /ar /v
+
+# enable set remote desktop settings user authentication
+cscript C:\Windows\System32\SCregEdit.wsf /cs 0
+# remote access from older systems (i.e. xp) 
+cscript C:\Windows\System32\SCregEdit.wsf /cs /v
+
+
+
+# disable firewall completely
+netsh firewall set opmode disable
+
+
+
+#
+# Disable IE Enhnaced Securtiy configuration
+#
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" 
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 0 -Force
+Stop-Process -Name Explorer -Force
+Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
+
+#
+# Enable IE Enhnaced Securtiy configuration
+#
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 1 -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 1 -Force
+Stop-Process -Name Explorer -Force
+Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
