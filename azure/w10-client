@@ -31,6 +31,9 @@ param
     
 )
 
+# geneates hashes for all certificates in Local Machine\My
+#dir cert:\LocalMachine\my | Where-Object { $_.HashPrivateKey} | Foreach-Object {write-host $_thumbprint - #_.subject}
+
 
 password
 #\\Apexagetn01.course.nt; V06WKS007 greenhtis.net
