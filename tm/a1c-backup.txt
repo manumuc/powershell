@@ -1,0 +1,76 @@
+
+# Get-Hotfix
+$A1cInstDrive = "C:"
+$A1cInstFolder = "\Program Files (x86)\Trend Micro\"
+
+$ArchivePathN=a1cbackup.zip
+$SrcPathN="C:\temp\a1backup"
+$DestPathN="C:\Temp"
+
+# Create a zip file with the contents of C:\Stuff\
+Compress-Archive -Path C:\Stuff -DestinationPath archive.zip
+
+
+#  https://success.trendmicro.com/solution/1061109
+
+# Complete Folder CmKeyBackup directory
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"CmKeyBackup"
+
+# Files  schema.dtd schema.xml
+# Files  StringTable.xml ProductInfos.xml IDMapping.xml
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager"
+
+#  \Control Manager\ProductClass folder
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\ProductClass"
+
+#    \Control Manager\Backup folder
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\Backup"
+  
+#     \Common\TMI\Profile folder
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\Common\TMI\"
+
+#     \Control Manager\WebUI\Exports
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\WebUI\Exports"
+
+#     \Control Manager\Reports (3.5 only)
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\Reports"
+
+#     \Control Manager\WebUI\WebApp\App_Data (5.0 only)
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\WebApp\App_Data"    
+    
+
+#     \Control Manager\WebUI\download\dlp
+# Set-Location -Path $A1cInstDrive$A1cInstFolder"Control Manager\WebUI\download\dlp"    
+
+
+#Registry keys:
+#    32-bit OS: HKEY_LOCAL_MACHINE\Software\TrendMicro\TVCS
+#    64-bit OS: HKEY_LOCAL_MACHINE\Software\Wow6432Node\TrendMicro\TVCS
+
+function ZipFiles( $zipfilename, $sourcedir )
+{
+   Add-Type -Assembly System.IO.Compression.FileSystem
+   $compressionLevel = [System.IO.Compression.CompressionLevel]::Optimal
+   [System.IO.Compression.ZipFile]::CreateFromDirectory($sourcedir,
+        $zipfilename, $compressionLevel, $false)
+}
+# Since Powershell 5
+# Create a zip file with the contents of C:\Stuff\
+Compress-Archive -Path C:\Stuff -DestinationPath archive.zip
+
+# Add more files to the zip file
+# (Existing files in the zip file with the same name are replaced)
+Compress-Archive -Path C:\OtherStuff\*.txt -Update -DestinationPath archive.zip
+
+# Extract the zip file to 
+#Expand-Archive -Path $ArchivePathN -DestinationPath $DestPathN
+
+# Create a zip file with the contents of C:\Stuff\
+# Compress-Archive -Path $SrcPathN -DestinationPath $ArchivePathN
+
+# Compare
+
+# Cleanup
+# Sourcefolder
+# Destinationfolder
+
