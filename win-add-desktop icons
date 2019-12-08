@@ -4,3 +4,17 @@ $key = "HKU\%1\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIco
 "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" 0
 "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" 0
 "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" 0 
+
+
+# Dark Theme for Windows (commenting out by default because this one's probbly a minority want)
+# Note: the title bar text and such is still black with low contrast, and needs additional tweaks (it'll probably be better in a future build)
+#If (-Not (Test-Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize)) {
+#	New-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes -Name Personalize | Out-Null
+#}
+#Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Type DWord -Value 0
+#Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Type DWord -Value 0
+# To Restore (Light Theme):
+#Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Type DWord -Value 1
+#Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Type DWord -Value 1
+
+
