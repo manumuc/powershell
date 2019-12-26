@@ -44,7 +44,19 @@ $csv | Foreach-Object{
    $Shortcutname=$_.Shortcutname
    $Shortcutvalue=$_.Shortcutvalue
    New-Item -ItemType SymbolicLink -Path $Shortcutpath -Name $Shortcutname -Value $Shortcutvalue
-   
+ 
+ #Get Edge Browser
+# 1 - CMD as Administrator /  sfc /scannow you might ignore errors
+sfc /scannow
+#2 -  peform DISM , note all errors
+dism /online /cleanup-image /restorehealth 
+#3 - Run Powershell 
+Get-AppXPackage -AllUsers |Where-Object {$_.InstallLocation -like "*SystemApps*"} | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\AppXManifest.xml"}
+All I had to do to get my Edge browser back was left click on Start Button, 
+select All Apps, then scroll to M and left-clicked on Edge browser icon and moved it to my Task Bar.  
+# install beta/dev version: https://www.intowindows.com/how-to-install-microsoft-edge-in-windows-10/
+
+Hope this helps you all!!
    
 # rename folder
 
