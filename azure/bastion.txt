@@ -1,0 +1,75 @@
+
+# 1. DO NOT OVERSIZE VM!
+# 2. Shut them off if not needed!
+# 3. Prepay per yer for 24x7
+# 4. Use Spot VMs
+
+# Bastion Server
+# https://www.microsoft.com/de-de/techwiese/renderingassets/techblog/AzureBastion-PublicPreview_01.jpg
+# https://docs.microsoft.com/en-us/azure/bastion/bastion-faq
+# https://docs.microsoft.com/en-us/azure/bastion/bastion-nsg
+# https://azure.microsoft.com/en-us/blog/announcing-the-preview-of-microsoft-azure-bastion/
+# https://docs.microsoft.com/en-us/azure/bastion/bastion-create-host-portal
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned  
+
+# Start Azure Shell
+iex https://shell.azure.com
+
+#Connect-AzAccount
+Login-AzAccount
+#Get all Subscriptions
+Get-AZSubscription 
+
+# Set Subcription Name
+$subscrName="...MSDN"
+Set-AzContext -SubscriptionName $subscrName
+
+or 
+
+Get-AzSubscription -SubscriptionName "...MSDN" | Set-AZContext
+# List Subscription
+Get-AZContext
+
+
+# Variables for Bastion
+
+#$LocName="<location name, such as West US>"
+$LocName="westeurope"
+$ResGropNBast="RG01Bast"
+New-AZResourceGroup -Name $ResGropNBast -Location $locName
+# Get-AZResourcegroup
+# Name of StorageAccoutns: lowerletter and digits only!
+$saName="rg01sa01bast" 
+New-AZStorageAccount -Name $saName -ResourceGroupName $rgName -Type Standard_LRS -Location $locName
+
+# Register the Provider
+ Register-AzProviderFeature -FeatureName AllowBastionHost -ProviderNamespace Microsoft.Network
+ Get-AzProviderFeature -FeatureName AllowBastionHost -ProviderNamespace Microsoft.Network
+# 
+ Register-AzResourceProvider -ProviderNamespace Microsoft.Network
+# Check when it is registered
+ Get-AzProviderFeature -FeatureName AllowBastionHost -ProviderNamespace Microsoft.Network
+# 
+
+# Create Virtual Network for Bastion
+# Virtual Network must have at least /27 r
+#    Range and an empty subnet with name “AzureBastionSubnet” . 
+#    do not configure any NSG, routingtable or deleagtion to AzureBastionSubnet.
+#    This Subnet will be configured as a DMZ.
+$subnetName = "AzureBastionSubnet"
+$virtualnetworkName = "myVnetBast"
+$VnAddrPrefix="10.0.0.0/16"
+$subnetBast = New-AzVirtualNetworkSubnetConfig -Name $subnetName -AddressPrefix 10.0.0.0/24
+$vnetBast = New-AzVirtualNetwork -Name $virtualnetworkName -ResourceGroupName $ResGropNBast -Location $LocName -AddressPrefix $VnAddrPrefix -Subnet $subnetBast
+
+# Public Ip for Bastion Server
+$pubIPBast = New-AzPublicIpAddress -ResourceGroupName $ResGropNBast -name "PubIPBast" -Location $LocName -AllocationMethod Static -Sku Standard
+
+# Create-VM Template Bastion
+# Subscription / ResourceGroup / Name / Region / virtual Network / Subnet / Public IP / Assignment
+# Tags 
+# topology is Internet–>Public IP of Bastion–>Bastion–>Virtual Network–NSG–Private IP–>VM 
+# Allow the RDP / SSH traffic from the Bastion VNET to the Virtual Machine and 
+# https traffic from the internet (or your public ip) to the Bastion subnet
+$bastion = New-AzBastion -ResourceGroupName $ResGropNBast -Name "Bastion" -PublicIpAddress $pubIPBast -VirtualNetwork $vnetBast
