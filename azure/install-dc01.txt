@@ -89,3 +89,40 @@ Get-AzPublicIpAddress -Name $PupIPAddrN -ResourceGroupName $ResGrpN | Select IpA
 
 # Login to virtual machine
 Get-AzRemoteDesktopFile -ResourceGroupName $ResGrpN -Name $VmN -Launch
+
+
+
+
+
+
+# >>> open cmd windows
+# >>> powershell
+# >>> set windows to copy paste Quick Edit Mode
+# >>> Generate c:\temp and add the path to the variable $destination
+
+# Login to virtual machine
+Get-AzRemoteDesktopFile -ResourceGroupName $ResGrpN -Name $VmN -Launch
+
+# change hostname
+rename-computer -newname dc01w12
+
+# 
+rename-netadapter -name "Ethernet1" Lan
+
+# install DS Agent and add to DSaaS
+# https://help.deepsecurity.trendmicro.com/software.html
+
+$managerUrl="https://app.deepsecurity.trendmicro.com:443/"
+$destination="c:\temp\agent.zip"
+Invoke-WebRequest -URi  https://files.trendmicro.com/products/deepsecurity/en/12.0/Agent-Windows-12.0.0-817.x86_64.zip `
+   -OutFile $destination
+
+# >>> Does not work - Expand-Archive -LiteralPath agent.zip -DestinationPath c:\temp
+
+# change to agent installation folder
+cd (($Env:Programfiles) +  "\Trend Micro\Deep Security Agent\")
+# remove all information from agent (reset)
+./dsa_control.cmd -r
+# Activate all information from agent (activate)
+./dsa_control.cmd  -a dsm://agents.deepsecurity.trendmicro.com:443 "tenantID:0A3F3A75-76FF-42F9-AE32-D0AD97C7A124" "token:BDAEE3D0-3EE0-9C52-200D-FB60E52BB86A" "policyid:6"
+
