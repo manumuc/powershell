@@ -124,5 +124,5 @@ cd (($Env:Programfiles) +  "\Trend Micro\Deep Security Agent\")
 # remove all information from agent (reset)
 ./dsa_control.cmd -r
 # Activate all information from agent (activate)
-./dsa_control.cmd  -a dsm://agents.deepsecurity.trendmicro.com:443 "tenantID:0A3F3A75-76FF-42F9-AE32-D0AD97C7A124" "token:BDAEE3D0-3EE0-9C52-200D-FB60E52BB86A" "policyid:6"
+./dsa_control.cmd  -a dsm://agents.deepsecurity.trendmicro.com:443  "policyid:6"
 
