@@ -103,11 +103,13 @@ Get-AzRemoteDesktopFile -ResourceGroupName $ResGrpN -Name $VmN -Launch
 # Login to virtual machine
 Get-AzRemoteDesktopFile -ResourceGroupName $ResGrpN -Name $VmN -Launch
 
+
+
 # change hostname
 rename-computer -newname dc01w12
 
-# 
-rename-netadapter -name "Ethernet1" Lan
+# Change NiC Name
+rename-netadapter -name "Ethernet" Priv
 
 # install DS Agent and add to DSaaS
 # https://help.deepsecurity.trendmicro.com/software.html
@@ -124,5 +126,37 @@ cd (($Env:Programfiles) +  "\Trend Micro\Deep Security Agent\")
 # remove all information from agent (reset)
 ./dsa_control.cmd -r
 # Activate all information from agent (activate)
-./dsa_control.cmd  -a dsm://agents.deepsecurity.trendmicro.com:443  "policyid:6"
+./dsa_control.cmd  -a dsm://agents.deepsecurity.trendmicro.com:443 "tenantID:0A3F3A75-76FF-42F9-AE32-D0AD97C7A124" "token:BDAEE3D0-3EE0-9C52-200D-FB60E52BB86A" "policyid:6"
+
+
+# gennerate local group 
+
+# deploy Activedirectory
+
+
+Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools 
+Get-Command -Module ADDSDeployment 
+Install-windowsfeature -name AD-Domain-Services -IncludeManagementTools 
+
+
+Get-Command -Module ADDSDeployment 
+
+
+Install-ADDSForest -CreateDnsDelegation:$false -DomainName "AZMR-W12-01.tm" -DomainNetbiosName "AZMR-W12-01" -ForestMode "Win2012R2" -InstallDNS:$true -LogPath "C:\Windows\NTDS" -Norebootoncompletion:$true -SysvolPath "C:\Windows\SYSVOL" -Force:$true
+        -SafeModeAdministratorPassword (ConvertTo-SecureString 'xxxxxxxx' -AsPlainText -Force) -SiteName "Azure-EU" -Confirm:$false   
+
+Install-ADDSForest `
+-CreateDnsDelegation:$false `
+-DatabasePath "C:\Windows\NTDS" `
+-DomainMode "Win2012R2" `
+-DomainName "AZMR-W12-01.tm" `
+-DomainNetbiosName "AZMR-W12-01" `
+-ForestMode "Win2012R2" `
+-InstallDns:$true `
+-LogPath "C:\Windows\NTDS" `
+-NoRebootOnCompletion:$true `
+-SysvolPath "C:\Windows\SYSVOL"
+-DelegatedAdministratorAccountName
+
+Restart-Computer . -Wait -For PowerShell -Force -Confirm:$false
 
