@@ -1,0 +1,91 @@
+
+#Definieren von Variablen
+$ResGrpN="Rg01Mail"
+$RGLoc01="westeurope"
+$SubnetObjN="Rg01MailSubnet"
+$SubnetObjPre="192.168.1.0/24"
+$VirtNetN="Rg01Network"
+$VirtNetPrefix="192.168.1.0/24"
+
+
+#Erstellen des SubNet
+$VirtNetSubConfObj = New-AzVirtualNetworkSubnetConfig `
+-Name $SubnetObjN `
+-AddressPrefix $SubnetObjPre
+
+#Erstellen des Virtuellen Netz
+$VNetObj = New-AzVirtualNetwork `
+-ResourceGroupName $ResGrpN `
+-Location $RGLoc01 `
+-Name $VirtNetN `
+-AddressPrefix $VirtNetPrefix `
+-Subnet $VirtNetSubConfObj
+
+# Get the subnet object for use in a later step.
+$SubnetObj = Get-AzVirtualNetworkSubnetConfig -Name $VirtNetSubConfObj.Name -VirtualNetwork $VNetObj
+
+
+
+$PubN="MicrosoftWindowsServer"
+$PubOffer="WindowsServer"
+$DataDiskStorTyp="Standard_LRS"
+$VmN="DC1"
+$DataDiskN="Dc1DataDisk"
+$DataDiskSize="20"
+$NetInterfN="Dc1Nic1"
+$PrivIPAddr="192.168.1.10"
+$PupIPAddrN="Rg01MailDc1VMPublicIP"
+$VMSize="Standard_B1ms"
+$PubSkus="2012-R2-Datacenter-smalldisk"
+
+
+$IpConfN1 = "IPConfig01"
+$IpConfig1Obj     = New-AzNetworkInterfaceIpConfig `
+  -Name $IpConfN1 `
+  -Subnet $SubnetObj `
+  -PrivateIpAddress $PrivIPAddr `
+  -Primary
+
+
+$NicObj = New-AzNetworkInterface `
+  -Name $NetInterfN `
+  -ResourceGroupName $ResGrpN `
+  -Location $RGLoc01 `
+  -IpConfiguration $IpConfig1Obj
+
+# $CredObj = New-Object PSCredential "azureadmin",(ConvertTo-SecureString "TiTboabf.77" -AsPlainText -Force)
+
+$CredObj = Get-Credential
+Set-AzVMOperatingSystem -VM $VmObj -Windows -ComputerName $VmN -ProvisionVMAgent -EnableAutoUpdate -Credential $CredObj
+
+# Erstellen der Virtuellen Maschine  
+$VmObj = New-AzVMConfig -VMName $VmN -VMSize $VMSize
+$VmObj = Set-AzVMOperatingSystem -VM $VmObj -Windows -ComputerName $VmN -ProvisionVMAgent -EnableAutoUpdate
+$VmObj = Add-AzVMNetworkInterface -VM $VmObj -Id $NicObj.Id
+$VmObj = Set-AzVMSourceImage -VM $VmObj -PublisherName $PubN -Offer $PubOffer -Skus $PubSkus -Version latest
+New-AzVM -ResourceGroupName $ResGrpN -Location $RGLoc01 -VM $VmObj -Verbose
+
+# Erstellen der zusätzlichen DatenDisk
+$DiskConfObj = New-AzDiskConfig -SkuName $DataDiskStorTyp -Location $RGLoc01 -CreateOption Empty -DiskSizeGB $DataDiskSize
+$DataDisk1Obj = New-AzDisk -DiskName $DataDiskN -Disk $DiskConfObj -ResourceGroupName $ResGrpN
+$vm = Get-AzVM -Name $VmN -ResourceGroupName $ResGrpN
+$vm = Add-AzVMDataDisk -VM $vm -Name $DataDiskN -CreateOption Attach -ManagedDiskId $DataDisk1Obj.Id -Lun 1
+Update-AzVM -VM $vm -ResourceGroupName $ResGrpN
+
+# Erstellen einer Public IP und zuweisen
+New-AzPublicIpAddress -Name $PupIPAddrN -ResourceGroupName $ResGrpN -AllocationMethod Dynamic -Location $RGLoc01
+$VNetObj = Get-AzVirtualNetwork -Name $VirtNetN -ResourceGroupName $ResGrpN
+$SubnetObj = Get-AzVirtualNetworkSubnetConfig -Name $SubnetObjN -VirtualNetwork $VNetObj
+$NicObj = Get-AzNetworkInterface -Name $NetInterfN -ResourceGroupName $ResGrpN
+
+$PubIPObj = Get-AzPublicIpAddress -Name $PupIPAddrN -ResourceGroupName $ResGrpN
+$NicObj | Set-AzNetworkInterfaceIpConfig -Name $IpConfN1 -PublicIPAddress $PubIPObj -Subnet $SubnetObj
+$NicObj | Set-AzNetworkInterface
+
+# Public IP Adresse abfragen
+Get-AzPublicIpAddress -Name $PupIPAddrN -ResourceGroupName $ResGrpN | Select IpAddress
+
+#$CredObj = Get-Credential -Message "Benutzername und Passwort für die neue Maschine eingeben"
+
+# Login to virtual machine
+Get-AzRemoteDesktopFile -ResourceGroupName $ResGrpN -Name $VmN -Launch
