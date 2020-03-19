@@ -2,11 +2,46 @@
 #Flashplayer
 logfile=download_log
 
+$Version='32.0.0.344"
+$baseUrl = "https://fpdownload.macromedia.com/get/flashplayer/pdc/$Version/"
+$dir = 'f:\'
+$files = 'install_flash_player_ax.exe',
+         'install_flash_player.exe',
+          'install_flash_player_ppapi.exe',         
+
+
+Set-Location $dir
+foreach ($file in $files)
+{
+   Write-Host "Downloading $file"
+   $dlUrl = "$($baseUrl)$file"
+   $dlPath = "$($dir)$file"
+   Invoke-WebRequest $dlUrl -OutFile $dlPath
+   
+   Flash Player 32.0.0.330 (ppapi).exe
+   Flash Player 32.0.0.330 (npapi).exe
+   
+   $Version='32.0.0.344'
+   $baseUrl = "https://fpdownload.macromedia.com/get/flashplayer/pdc/$Version"
+   $dir = 'f:'
+   Invoke-WebRequest "$($baseUrl)/install_flash_player_ax.exe" -OutFile "$($dir)\Flash Player $Version (ie).exe"
+   Invoke-WebRequest "$($baseUrl)/install_flash_player.exe" -OutFile "$($dir)\Flash Player $Version (nnapi).exe"
+   Invoke-WebRequest "$($baseUrl)/install_flash_player_ppapi.exe" -OutFile "$($dir)\Flash Player $Version (ppapi).exe"
+   
+   $dlUrl = "$($baseUrl)/install_flash_player_ax.exe"
+   $dlPath = "$($dir)\Flash Player $Version (ie).exe"
+   Invoke-WebRequest $dlUrl -OutFile $dlPath
+   $dlUrl = "$($baseUrl)/install_flash_player.exe"
+   $dlPath = "$($dir)\Flash Player $Version (nnapi).exe"
+   Invoke-WebRequest $dlUrl -OutFile $dlPath
+   $dlUrl = "$($baseUrl)/install_flash_player_ppapi.exe"
+   $dlPath = "$($dir)\Flash Player $Version (ppapi).exe"
+   Invoke-WebRequest $dlUrl -OutFile $dlPath
+   #
 #
-#
-https://fpdownload.macromedia.com/get/flashplayer/pdc/32.0.0.101/install_flash_player_ax.exe
-https://fpdownload.macromedia.com/get/flashplayer/pdc/32.0.0.101/install_flash_player.exe
-https://fpdownload.macromedia.com/get/flashplayer/pdc/32.0.0.101/install_flash_player_ppapi.exe
+$baseUrl + '/install_flash_player_ax.exe'
+https://fpdownload.macromedia.com/get/flashplayer/pdc/32.0.0.101'/'
+https://fpdownload.macromedia.com/get/flashplayer/pdc/32.0.0.101' '
  
 
 ActiveX https://fpdownload.adobe.com/get/flashplayer/distyfp/current/win/
