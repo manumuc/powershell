@@ -1,0 +1,414 @@
+Install Internal Certificate Authroty
+https://www.azure365pro.com/install-and-configure-certificate-authority-in-windows-server-2016/
+https://timothygruber.com/pki/deploy-a-pki-on-windows-server-2016-part-1/
+https://stealthpuppy.com/deploy-enterprise-root-certificate-authority/
+
+- Preferred to be on Dedicated Server or on a Domain Controller.
+- Open Server Manager – Manage – Add Roles and Features
+
+Step 2: Choose : Active Directory Certificate Services, Choose Next
+      And Choose : Certification Authority Web Enrollment
+  Choose :
+    Certification Authority
+    Certification Authority Web Enrollment
+  Choose Install and Close
+
+Step 3:
+  To Configure Active Directory Certificate Services – Choose the Exclamation Mark on the Flag
+  Configure Active Directory Certificate Services on the Destination Server
+  Choose Next
+Choose
+    Certificate Authority
+    Certification Authority Web Enrollment
+  Choose Enterprise CA
+    Enterprise CAs Must be domain members and are typically online to issue certificates or certificate policies.
+
+Step 4:
+  Choose Root CA
+  Root CAs are the first and may be the only CAs Configured in a PKI Hierarchy.
+
+Step 5:
+  Create a new Private key
+
+Step 6:
+    Use SHA256
+    RSA#Microsoft Software Key Storage Provider
+    Key Length – 2048
+
+Step 7:Click Next
+
+Step 8:
+  By Default Certificate is valid for 5 years , Don’t make any changes on it , Click next
+
+Step 9:
+  Specify Certificate Authority Default Database Locations
+  Click Configure
+  Choose Configure
+  We have successfully Installed and Configured – Certificate Authority on Windows Server 2016
+
+Let us see how to Request a Create a Simple Cert from Internal Certificate Authority
+  Browse http://localhost/certsrv/
+  You would see a page below like this , Choose “Request a Certificate”
+
+Step 11 –
+  Click on Advanced Certificate Request
+
+Step 12:
+  Choose the Second one
+  Submit a certificate request by using a base-64-Encoded CMCimage
+
+Step 13:
+  Now Copy the  Note pad Certificate Request Data – You have to generate a Certificate Request from the application. For example how we are doing in exchange server
+  https://www.azure365pro.com/how-to-create-an-ssl-certificate-request-for-exchange-server-2013/
+  Or you can use https://www.digicert.com/util/
+  Example – Data Should be like below –
+
+
+
+
+
+
+For Windows 2016
+http://www.garethjones294.com/install-skype-for-business-server-2015-on-windows-server-2016-step-by-step/
+
+Install-WindowsFeature NET-Framework-Core, RSAT-ADDS, Windows-Identity-Foundation, Web-Server, Web-Static-Content, Web-Default-Doc, Web-Http-Errors, Web-Dir-Browsing, Web-Asp-Net, Web-Net-Ext, Web-ISAPI-Ext, Web-ISAPI-Filter, Web-Http-Logging, Web-Log-Libraries, Web-Request-Monitor, Web-Http-Tracing, Web-Basic-Auth, Web-Windows-Auth, Web-Client-Auth, Web-Filtering, Web-Stat-Compression, Web-Dyn-Compression, NET-WCF-HTTP-Activation45, Web-Asp-Net45, Web-Mgmt-Tools, Web-Scripting-Tools, Web-Mgmt-Compat, Server-Media-Foundation, BITS –Source  d:\sources\sxs –Verbose –Restart
+
+IE in Server 2016 does not allow downloads by default so open IE > Settings > Internet Options > Security > Custom Level
+   Download / enable
+   
+Downoad Silberligth: 
+   Now install Silverlight on your Front End servers using this link http://gj294.co/2e6aMUH.
+
+Create a File Share
+   You now need to create a file share for the Skype For Business (SfB) front end pool. 
+   You can create either a normal windows share or a Distributed File System (DFS) file share if you require high availability.  The file share should not be on one of the front end servers.  The file share is sued to store shared data of each enterprise edition pool or standard edition server. It stores application, user services and web services data for both enterprise edition and standard edition while enterprise edition also stores windows fabric dump and trace files.
+   I will be installing my SfBFileShare on my 2 Domain Controllers.
+   I recommend you follow this guide http://gj294.co/2dSrt5s
+
+Configure SQL Server
+   Install SQL on a separate Server NOT on the Front End servers.
+   The following SQL editions are supported
+       Microsoft SQL Server 2014 Standard (64-bit edition), and we recommend running with the latest service pack.
+       Microsoft SQL Server 2012 Standard (64-bit edition), and we recommend running with the latest service pack.
+       Microsoft SQL Server 2008 R2 Standard (64-bit edition), and we recommend running with the latest service pack.
+       However, I am using SQL 2016 Enterprise Edition 64 Bit.
+       You can use this guide if you are not familiar with installing SQL http://gj294.co/2eDqZRC
+
+Create your DNS Records
+   Follow this guide to create your DNS records http://gj294.co/2deauLE
+
+Install Administrative Tools
+   Insert the media into your SfB Front End Servers and run setup.exe located in x:\setup\amd64\setup.exe
+   The installation media requires Microsoft Visual C++ to run so leave that to install it shouldn’t take long.
+   Ensure you select Connect to the Internet to check for updates and click Install.
+   Once downloaded click Next then you should see the Deployment Wizard:
+   Click install Administrative Tools and follow the installation wizard.
+   Click Finish once complete then you will be returned to the Deployment Wizard Screen
+
+6. Prepare Active Directory
+   Log on as a user that had Schema Admins credentials for your Domain.
+   In the Skype for Business Server Deployment Wizard, Click Prepare Active Directory.
+   Complete the three sub-steps for Schema, Forest and Domain to prepare Active Directory
+
+7. Define a Topology
+   Open Topology Builder from the start menu.
+   Select New Topology, and click OK
+   Saved the file somewhere, I always put it on my Desktop.
+   On the Define the primary domain screen, enter your external domain name that you wish to use as your sip addresses.  
+   Normally this is the same as your email domain (eg, microsoft.com), and then click Next.
+   Add any additional domains you wish to use, and then click Next.
+   Enter a Name and Description for the location, click Next.
+   Enter the City, State/Province, and Country/Region Code for the site if you wish, click Next
+   Ensure Open the New Front End Wizard when this wizard closes is selected and click Finish, Click Next on the home screen.
+   Enter the fully qualified domain name (FQDN) of the pool, and select Enterprise Edition Front End Pool.  
+      This is the DNS name that points to your Load Balancer or you are using for DNS Load Balancing.  
+      It is NOT your Front End servers FQDN., Click Next.
+ Enter the FQDNs of the servers you are going to deploy in the pool, and then click Next.
+    In my environment I only have 2 but this is not recommended in production.  
+    For more information on this see http://gj294.co/2e6yX34
+    Select the features that you wish to be enabled in this topology, and then click Next.
+    Note: You can enable features later.
+ Depending on your environment and if you intend to collocate the Mediation server will determine if you select the Mediation Server Colocation check box.  In my lab I will select it.  Click Next.
+ Uncheck enable Edge Pool.  This will be configured later.  Click Next.
+ You now need to define a new SQL Server instance that you installed earlier to store the SfB pool information, click New.
+ Specify the SQL Server FQDN in the Define New SQL Store dialog box.  Click OK., Click Next.
+ Select Define a new file share, in the File Server FQDN box, enter the FQDN of your domain if you are using DFS or enter the FQDN of the server that hosts your file share if not.
+ Then enter the share name for the file share in the File Share box. 
+
+ I am using a Kemp hardware load balancer to load balance SIP and HTTP(S) traffic.  
+    Therefore, we are not selecting the Override internal Web Services pool FQDN check box. 
+    This depends how DNS works in your domain and is a more complex discussion outside the scope of this article.
+
+ An Office Online Server (this is the new name for Office Web Apps Server) will be configured later so leave it unchecked and click Finish.
+ 
+ 8. Configure the simple URL’s
+
+In Topology Builder, right-click the Skype for Business Server top node, and then click Edit Properties
+
+image
+
+In the Administrative access URL box, enter the a simple URL you will use for administrative access to Skype for Business Server Control Panel, and then click OK.
+
+This is an internal URL to be resolved by internal DNS server and should never be exposed externally!
+
+ 
+
+9. Publish the Topology
+
+In the Topology Builder right-click the Skype for Business Server 2015 node, and then click Publish Topology.
+
+image
+
+On the Publish the topology page, click Next.
+
+image
+
+On the Select Central Management Server page, select a Front End pool.
+
+image
+
+On the Select databases page, select the databases you want to publish.
+
+image
+
+Click Next to complete the publishing process then click Finish.
+
+ 
+
+10. Install Skype for Business
+
+Launch Deployment Wizard page from the Start Menu.
+
+image
+
+On the Deployment Wizard page, click Install or Update Skype for Business Server System.
+
+image
+
+Click Run next to Step 1: Install Local Configuration Store
+
+image
+
+On the Install Local Configuration Store page, make sure that the Retrieve directly from the Central Management store option is selected, and then click Next.
+
+image
+
+The Local Configuration Store will now install.  The local configuration store will act as a read-only replica of the Skype for Business Server Central Management store (CMS).
+
+image
+
+When the local server configuration installation is complete, click Finish.
+
+image
+
+Click Run next to Step 2: Setup or Remove Skype for Business Server Components.
+
+image
+
+Click Next.
+
+image
+
+This will now install the features on the Front End server that you selected during the Topology Wizard.
+
+image
+
+Once completed click Finish.
+
+Request & Assign Certificate
+
+Click Run next to Step 3: Request, Install or Assign Certificates.
+
+image
+
+Click Run next to Step 3: Request, Install or Assign Certificates.
+
+image
+
+On the Certificate Wizard page, click Request.
+
+image
+
+On the Certificate Request page fill in the relevant data including selecting All under the SIP domain and, click Next.
+
+image
+
+On the Certificate Request Summary page, review the information in the summary. If the information is correct, click Next.
+
+image
+
+Once complete click Next.
+
+image
+
+On the Online Certificate Request Status page, review the information returned. Note that the certificate was issued and installed into the local certificate store.
+
+By default, the check box for Assign the certificate to Skype for Business Server certificate usages is selected. Click Finish.
+
+image
+
+On the Certificate Assignment Summary page, review the information presented to make sure that this is the certificate that should be assigned, and then click Next.
+
+image
+
+Click Finish.
+
+image
+
+Now select the OAuthTokenIssuer option and click Request.
+
+image
+
+Fill in the relevant details and click Next.
+
+image
+
+A certificate will now be requested.
+
+image
+
+Click Next.
+
+image
+
+Click Finish.
+
+image
+
+On the Certificate Assignment Summary page, review the information presented to make sure that this is the certificate that should be assigned, and then click Next
+
+image
+
+Click Next.
+
+image
+
+Click Finish.
+
+image
+
+On the Certificate Wizard page, confirm that all services have a green check to indicate that all have been assigned a certificate, including the OAuthTokenIssuer ,as shown in the figure, and then click Close.
+
+image
+
+Exit the Deployment Wizard.
+
+image
+
+Open the Skype for Business Management Shell and run Start-CSWindowsServer command.
+
+ 
+
+11. Install Skype for Business on the Second Front End Server
+
+Log onto your second server and repeat all the tasks in Step 10.
+
+ 
+
+12. Check the Load Balancer to ensure all services at functioning
+
+Log onto your load balancer and ensure all the services are up.
+
+image
+
+All is good Smile
+
+ 
+
+13. Enable a User to test
+
+Log onto your load balancer and ensure all the services are up.
+
+Open Skype for Business Server Control Panel.
+
+In the left navigation bar, click Users
+
+image
+
+Click Enable users.
+
+image
+
+Click Add > Search for Admin > Click OK > Click Enable.
+
+If you receive the following error:
+
+Active Directory operation failed on “Domain Controller Name”. You cannot retry this operation: “Insufficient access rights to perform the operation
+
+image
+
+Open Active Directory Users & Computers and click  View > Advanced Features.
+
+Go to the properties of the user > Security > Advanced
+
+image
+
+Click Enable inheritance.  Or disable.  Whichever is the opposite.
+
+image
+
+Click OK and try to enable the user again in Skype for Business Control Panel.  This occurs due to the user having Domain Admin privileges.
+
+ 
+
+14. Test login
+
+Go to a client machine and open Skype for Business client.
+
+image
+
+Enter the users SIP address and Click Sign In.
+
+image
+
+Enter the users Password and Click Sign In.
+
+image
+
+Select yes or no depending on your preferences.
+
+image
+
+If you get this error then click ok and the username in the format domain\username
+
+image
+
+image
+
+Congratulations you have a fully functioning highly available (BASIC) Skype for Business Server 2015 installation running on Windows Server 2016.
+ 
+ 
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+for Windows 2012 R2
+https://judeperera.wordpress.com/2015/04/21/step-by-step-guide-for-installing-skype-for-business-server-2015/
+
+REM Ensure you have Windows Server 2012 R2 Installation Media is inserted.
+REM Run the following command
+Add-WindowsFeature NET-Framework-Core, RSAT-ADDS, Windows-Identity-Foundation, Web-Server, Web-Static-Content, Web-Default-Doc, Web-Http-Errors, Web-Dir-Browsing, Web-Asp-Net, Web-Net-Ext, Web-ISAPI-Ext, Web-ISAPI-Filter, Web-Http-Logging, Web-Log-Libraries, Web-Request-Monitor, Web-Http-Tracing, Web-Basic-Auth, Web-Windows-Auth, Web-Client-Auth, Web-Filtering, Web-Stat-Compression, Web-Dyn-Compression, NET-WCF-HTTP-Activation45, Web-Asp-Net45, Web-Mgmt-Tools, Web-Scripting-Tools, Web-Mgmt-Compat, Server-Media-Foundation, BITS -Source D:\sources\sxs
+
+REM Ensure that the below Operating System Hot fixes are installed.
+    KB2982006 Windows Server 2012 R2
+
+REM Install Skype for Business Server Admin Tools
+    Insert the Skype for Business Server 2015 installation media.
+    Navigate and run Setup.exe
+    On the prompt that asks you to install Visual C++, click Yes.
+    On the next window, if you want the setup to download and install the latest updates for Skype for Business, click Update. 
+       If you do not want to install updates and want to continue with the installation, click on Install.
+    On the License Agreement page, select I accept the terms in the license agreement and click OK.
+    Wait till the installation is completed. If you opted to download for Windows Update, the setup will display the below window. 
+    
+ REM Go to Start Menu
+    Run ‘Skype for Business Server Deployment Wizard’
+    On the ‘Deployment Wizard’, click on ‘Install Administrative Tools’.
+    On the Installation window, click Next to begin installation of the Topology Builder and Control Panel. 
+    
+ REM he concept of the Active Directory preparation is pretty much the same as it was in Lync Server deployments.
+       = Go to Start Menu
+       Run ‘Skype for Business Server Deployment Wizard’
+    Prepare AD
+       Click on ‘Prepare Active Directory’
+       On the Installation window, click Next to begin installation of the Topology Builder and Control Panel. 
+
+
