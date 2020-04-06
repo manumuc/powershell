@@ -84,28 +84,19 @@ Downoad Silberligth:
 Create a File Share
 
 Go to your DC and open poweshell
-   New-Item -Path 'C:\SfB2015-Share' -ItemType Directory
    
-New-SmbShare -Name 'SfB2015-Share' `
-             -Path 'C:\SfB2015-Share' `
-             -FullAccess Administrators `
-             -ChangeAccess Administrators `
-             -ReadAccess Administrators `
-             -Description 'SfB2015-Share'
-New-SMBShare –Name 'SfB2015-Share' –Path 'C:\SfB2015-Share' `
-   –FullAccess Administrators  ` 
-   -ChangeAccess Administrators `
-   -ReadAccess Users
+$Share='c:\SfB2015'
+$ShareName='SfB2015Share'
+$Desc='Share for Skype for Business 2015 on Server xyz' 
+IF (!(TEST-PATH $Share)) {New-Item -Path $Share -ItemType Directory} 
+IF (!(GET-SmbShare $ShareName  -ErrorAction SilentlyContinue) -And (TEST-PATH $Share))
+{New-SMBShare -Name $ShareName -Path $Share -FullAccess Administrators -Description "$Desc"}
 
    You now need to create a file share for the Skype For Business (SfB) front end pool. 
    You can create either a normal windows share or a Distributed File System (DFS) file share if you require high availability.  The file share should not be on one of the front end servers.  
 The file share is sued to store shared data of each enterprise edition pool or standard edition server. It stores application, user services and web services data for both enterprise edition and standard edition while enterprise edition also stores windows fabric dump and trace files.
    I will be installing my SfBFileShare on my 2 Domain Controllers.
-   
-   $Share='c:\SfB2015'   
-   $ShareName='SfB2015Share'   
-   IF (!(TEST-PATH $Share)) {New-Item -Path $Share -ItemType Directory} 
-   IF (!(GET-SMBShare -Name $ShareName)){ New-SMBShare -Name "SfB2015-Share" -Path "C:\SfB2015-Share" -FullAccess Administrators}
+
 
    I recommend you follow this guide http://gj294.co/2dSrt5s
 
