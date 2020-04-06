@@ -1,3 +1,5 @@
+
+
 Install Internal Certificate Authroty
 https://www.azure365pro.com/install-and-configure-certificate-authority-in-windows-server-2016/
 https://timothygruber.com/pki/deploy-a-pki-on-windows-server-2016-part-1/
@@ -80,9 +82,31 @@ Downoad Silberligth:
    Now install Silverlight on your Front End servers using this link http://gj294.co/2e6aMUH.
 
 Create a File Share
+
+Go to your DC and open poweshell
+   New-Item -Path 'C:\SfB2015-Share' -ItemType Directory
+   
+New-SmbShare -Name 'SfB2015-Share' `
+             -Path 'C:\SfB2015-Share' `
+             -FullAccess Administrators `
+             -ChangeAccess Administrators `
+             -ReadAccess Administrators `
+             -Description 'SfB2015-Share'
+New-SMBShare –Name 'SfB2015-Share' –Path 'C:\SfB2015-Share' `
+   –FullAccess Administrators  ` 
+   -ChangeAccess Administrators `
+   -ReadAccess Users
+
    You now need to create a file share for the Skype For Business (SfB) front end pool. 
-   You can create either a normal windows share or a Distributed File System (DFS) file share if you require high availability.  The file share should not be on one of the front end servers.  The file share is sued to store shared data of each enterprise edition pool or standard edition server. It stores application, user services and web services data for both enterprise edition and standard edition while enterprise edition also stores windows fabric dump and trace files.
+   You can create either a normal windows share or a Distributed File System (DFS) file share if you require high availability.  The file share should not be on one of the front end servers.  
+The file share is sued to store shared data of each enterprise edition pool or standard edition server. It stores application, user services and web services data for both enterprise edition and standard edition while enterprise edition also stores windows fabric dump and trace files.
    I will be installing my SfBFileShare on my 2 Domain Controllers.
+   
+   $Share='c:\SfB2015'   
+   IF (!(TEST-PATH $Share)) {
+                New-Item -Path $Share -ItemType Directory} 
+   
+
    I recommend you follow this guide http://gj294.co/2dSrt5s
 
 Configure SQL Server
