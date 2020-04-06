@@ -101,6 +101,15 @@ The file share is sued to store shared data of each enterprise edition pool or s
    I recommend you follow this guide http://gj294.co/2dSrt5s
 
 Configure SQL Server
+
+
+
+$password = "trendmicro!" | ConvertTo-SecureString -AsPlainText -Force 
+New-ADUser -sAMAccountName sasfb -Name sasfb -Surname sasfb -Path 'CN=Users,DC=Trend,DC=local' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName saims -Name saims -Surname saims -Path 'CN=Users,DC=Trend,DC=local' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName sqlsfb -Name sqlsfb -Surname sqlsfb -Path 'CN=Users,DC=Trend,DC=local' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+New-ADUser -sAMAccountName sqlims -Name sqlims -Surname sqlims -Path 'CN=Users,DC=Trend,DC=local' -AccountPassword $password -ChangePasswordAtLogon $False -PasswordNeverExpires $True -Enabled $True 
+
    Install SQL on a separate Server NOT on the Front End servers.
    The following SQL editions are supported
        Microsoft SQL Server 2014 Standard (64-bit edition), and we recommend running with the latest service pack.
