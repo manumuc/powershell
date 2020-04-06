@@ -103,9 +103,9 @@ The file share is sued to store shared data of each enterprise edition pool or s
    I will be installing my SfBFileShare on my 2 Domain Controllers.
    
    $Share='c:\SfB2015'   
-   IF (!(TEST-PATH $Share)) {
-                New-Item -Path $Share -ItemType Directory} 
-   
+   $ShareName='SfB2015Share'   
+   IF (!(TEST-PATH $Share)) {New-Item -Path $Share -ItemType Directory} 
+   IF (!(GET-SMBShare -Name $ShareName)){ New-SMBShare -Name "SfB2015-Share" -Path "C:\SfB2015-Share" -FullAccess Administrators}
 
    I recommend you follow this guide http://gj294.co/2dSrt5s
 
