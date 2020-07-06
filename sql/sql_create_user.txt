@@ -1,0 +1,26 @@
+CREATE DATABASE [NewDatabase]
+GO
+CREATE LOGIN [NewLogin] WITH PASSWORD=N'test', DEFAULT_DATABASE=[NewDatabase]
+GO
+ALTER SERVER ROLE [sysadmin] ADD MEMBER [NewLogin]
+GO
+USE [NewDatabase]
+GO
+CREATE USER [NewUser] FOR LOGIN [NewLogin]
+GO
+ALTER USER [NewUser] WITH DEFAULT_SCHEMA=[dbo]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [NewUser]
+GO
+-- Clean up
+USE master
+GO
+DROP DATABASE [NewDatabase]
+GO
+DROP LOGIN [NewLogin]
+GO
+
+ALTER LOGIN sa ENABLE ;
+GO
+ALTER LOGIN sa WITH PASSWORD = '<enterStrongPasswordHere>' ;
+GO
