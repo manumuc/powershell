@@ -18,9 +18,11 @@ sfc /scannow
 
 REM dism /online /cleanup-image /spsuperseded
 
-
+REM schtasks.exe /Run /TN "\Microsoft\Windows\Servicing\StartComponentCleanup"
 
 REM dism /online /cleanup-image /StartComponentCleanup
+
+REM Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
 
 REM dism /online /cleanup-image /scanhealth
 
