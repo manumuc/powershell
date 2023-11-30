@@ -1,0 +1,171 @@
+# note: Windows 2022 is supported since Patch3!
+# Reference: https://success.trendmicro.com/dcx/s/solution/000290733?language=en_US
+# Supported SQL Server: SQL 20219 is supporred since Patch4
+# Reference: https://success.trendmicro.com/dcx/s/solution/1061133-supported-microsoft-sql-server-editions-in-control-manager-tmcm-apex-central?language=en_US
+
+
+Prerequisites
+==============
+
+Installation Account is part of the Local Administrator
+Install needed Windows 2019 Components 
+# Get-WindowsFeature
+
+# Install Message Queue
+Add-WindowsFeature MSMQ
+Enable-WindowsOptionalFeature -online -FeatureName MSMQ
+
+# Microsoft IIS 10.0
+# Start /w pkgmgr /iu:IIS-WebServerRole;IIS-WebServer;IIS-CommonHttpFeatures;IIS-StaticContent;IIS-DefaultDocument;IIS-DirectoryBrowsing;IIS-HttpErrors;IIS-ApplicationDevelopment;IIS-ASPNET;IIS-NetFxExtensibility;IIS-ISAPIExtensions;IIS-ISAPIFilter;IIS-HealthAndDiagnostics;IIS-HttpLogging;IIS-LoggingLibraries;IIS-RequestMonitor;IIS-Security;IIS-RequestFiltering;IIS-HttpCompressionStatic;IIS-WebServerManagementTools;IIS-ManagementConsole;WAS-WindowsActivationService;WAS-ProcessModel;WAS-NetFxEnvironment;WAS-ConfigurationAPI
+Install-WindowsFeature -name Web-Server -IncludeManagementTools
+Get-WindowsFeature
+   Web-Server,Web-Common-Http,Web-Mgmt-Console -Restart
+# Microsoft IIS Windows Authentication
+# Enable-WindowsOptionalFeature -Online -Featurename IIS-WindowsAuthentication
+Get-WindowsFeature Web-Windows-Auth
+Install-Get-WindowsFeature Web-Windows-Auth
+# Microsoft IIS ASP
+Get-WindowsFeature Web-ASP
+Install-WindowsFeature Web-ASP
+# Microsoft IIS ASP.NET 4.7
+Get-WindowsFeature  Web-Asp-Net45 
+Install-WindowsFeature Web-Asp-Net45
+# Microsoft IIS ASP.NET Extensibility 4.7
+Get-WindowsFeature Web-Net-Ext45
+Install-WindowsFeature Web-Net-Ext45
+# Microsoft IIS CGI
+Get-WindowsFeature Web-CGI
+Install-WindowsFeature Web-CGI
+# Microsoft IIS Static Content
+Get-WindowsFeature IIS-StaticContent
+Install-WindowsFeature IIS-StaticContent
+
+##
+Get-WindowsFeature Web-Lgcy-Mgmt-Console
+#  IIS 6 Metabase Compatibility
+Get-WindowsFeature  Web-Metabase
+# IIS 6 Management Compatibility
+Get-WindowsFeature Web-Mgmt-Compat
+DisplayName               : 
+
+IIS has not following Folders or Virtual Folders
+--------------------------
+ControlManager
+TVCS
+TVCSDownload
+ remove these folders/virtual folders or create a new website for Apex Central.
+
+Check Application Pool on IIS
+-------------------------------
+There should not be a TMCMApplicationPool in IIS Application Pools. 
+Check the Application Pools in the IIS. 
+If there is a TMCMApplicationPool, manually remove it.
+Test the Database conection configured to the A1C
+
+
+===================================================
+Do the following:
+   Go to the A1C Server and open Command Prompt.
+   Navigate to C:\Program Files (x86)\Trend Micro\Control Manager\DBConfig.
+Use the following command:
+   DBConfig.exe -DBName="<DBname>" -DBAccount="<DBaccount>" -DBPassword="<password>" -Mode=">WA or SQL>" -DBHost="<IP address or FQDN of SQL server>"
+Where:
+   DBName - Name of the Database
+   DBAccount - Account used to login on the SQL Server Management Studio to access the DB
+   DBPassword - Password used to login on the SQL Server Management Studio to access the DB
+   Mode - There are 2 options WA (Windows Authentication) or SQL
+   DBHost - Use the IP or FQDN of your SQL Server
+
+#Tail Installaton on powershell: 
+Get-Content MyFile -Tail 1 -Wai
+
+Database best practice
+https://success.trendmicro.com/dcx/s/solution/1119557-configuring-control-manager-tmcm-apex-central-to-ensure-that-it-will-not-consume-all-free-disk-s?language=en_US
+===========================================================
+
+Stop Apex Central services
+==============================
+
+Stop the following Control Manager Services:
+Trend Micro Control Manager/Apex Central™
+Trend Micro Management Infrastructure
+
+Backup
+============================
+
+Database file (on db server)
+For Apex Central™:
+   db_ApexCentral.mdf
+   db_ApexCentral_log.ldf
+The default file location of the SQL Server is 
+   \Program Files\ Microsoft SQL Server\MSSQL<Version>.<InstanceID>\MSSQL\DATA
+
+
+Remove A1C
+Reference: https://success.trendmicro.com/dcx/s/solution/000291875?language=en_US
+=====================
+
+Delete Apex Central
+--------------------
+
+sc delete "TMCM"
+sc delete "TrendMicro Infrastructure"
+
+Remove the following items from the site used by Apex Central.
+----------------------------------------
+Open IIS manager.
+Click Sites in the Connections pane on the left.
+Select the site name you specified when you installed Apex Central. By default, Apex Central will be installed on Default Web Site.
+Delete the following:
+Virtual Directory
+Control Manager
+TVCS
+TVCSDownload
+Application
+WebApp
+
+Remove information for Apex Central from ISAPI and CGI Restrictions.
+---------------------------------------------------------
+In the Connections pane, 
+   click the icon with the machine name and 
+   doubleclick ISAPI and CGI Restrictions.
+Sort by the Path column and 
+   remove all settings under the Apex Central installation folder.
+   The default path in 64-bit environment is 
+      C:\Program Files (x86)\Trend Micro\Control Manager\.
+
+Remove SQL from SQL Server
+---------------------------
+# Connect to SQL Server using the sqlcmd utility:
+   sqlcmd -S localhost\SQLEXPRESS -u account_name -p password
+# If the default instance has db_ApexCentral
+   sqlcmd -S localhost -u account_name -p password
+# Run the following command:
+   DROP DATABASE db_ApexCentral
+   GO
+# You can exit the sqlcmd utility by typing "quit".
+
+Delete Registry
+--------------------------
+#Delete the following registry keys if they exist:
+   HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\TMI
+   HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\TrendMicro Infrastructure
+   HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TrendMicro Infrastructure
+# Under HKEY_CLASSES_ROOT\Installer\Dependencies\,
+      search for "Trend Micro Apex Central", and delete all folders that contain this key
+# Under HKEY_CLASSES_ROOT\Installer\Products\, 
+      search for "Apex Central", and delete all folders that contain this key
+# Under HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Installer\Dependencies\, 
+      search for "Trend Micro Apex Central", and delete all folders that contain this key
+# Under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Products\, 
+      search for " Apex Central", and delete all folders that contain this key
+# Under HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\, 
+      search for "Trend Micro Apex Central", and delete all folders that contain this key
+HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\TrendMicro\TMI
+HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\TrendMicro\TVCS
+HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\TMCM
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TMCM
+
+
+Restart the machine.
+
