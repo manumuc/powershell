@@ -1,5 +1,7 @@
 
 #Definieren von Variablen
+# N...Name
+# 
 $ResGrpN="Rg01Mail"
 $RGLoc01="westeurope"
 $SubnetObjN="Rg01MailSubnet"
