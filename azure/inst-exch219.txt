@@ -1,13 +1,25 @@
 #Exchange 2019
+# Support Matrix: https://learn.microsoft.com/en-us/exchange/plan-and-deploy/supportability-matrix?view=exchserver-2016
 # Resources > MS recommendations: https://www.mcseboard.de/topic/216696-exchange-2019-betrieb-mit-weniger-als-128-gb-ram/
 # Run Exch on DC: 
 # Intall Exchange on Win2022
 
 # Install Exchange on Win2025: tbc Win2025 will be Released in Q32025
+# Windows Server 2025: https://www.theregister.com/2024/11/04/windows_server_2025_ga/&ved=2ahUKEwjA68Xp5taKAxV4HhAIHU2LD1AQFnoECAcQAw&usg=AOvVaw03SWDTn6Q4jdg2IuX0s0Xh
 # Configure SMTP on Exchange 2019
 
+# Actual Installation
+## Prepare the Domian: https://learn.microsoft.com/en-us/exchange/plan-and-deploy/prepare-ad-and-domains?view=exchserver-2019
+## Optional Switches for Setup: https://learn.microsoft.com/en-us/exchange/plan-and-deploy/deploy-new-installations/unattended-installs?view=exchserver-2019#optional-command-line-switches-for-unattended-mode
 
 @
 # DC: For an enterprise with more than 2000 and less than 5000 concurrent logged in users per domain, 
 #    you must have at least 4 Domain Controllers. 
 #    Each Domain Controllers must have at least 16 GB RAM and a Quad-Core CPU.
+
+
+
+E:\Setup.exe /IAcceptExchangeServerLicenseTerms_DiagnosticDataON /PrepareSchema
+
+Setup.exe /IAcceptExchangeServerLicenseTerms /mode:Install /role:Mailbox /DomainController:DC01
+
