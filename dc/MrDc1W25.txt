@@ -1,0 +1,248 @@
+# Variables
+$SecPwd=(ConvertTo-SecureString -AsPlainText "S3cur3Pwd!" -Force)
+$WinKey="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+$Hostname=TmmrDc01W19
+$InterFAlias1="Ethernet0"
+$IpAddr1="192.168.1.39"
+$PrefLen1=20
+$Gateway1="192.168.1.254"
+$IpDns = ("127.0.0.1","8.8.8.8")
+
+
+# generate autounattended.xml for windows 2019, 2016
+#
+#  - get autounattended.xml 
+#
+# change ISO with Anyburner http://www.anyburn.com/thank-you-install-anyburn.htm
+
+
+#run sconfig command
+   - IP address
+ 
+ # get all disks
+get-voluem
+
+
+# activate Windows
+slmgr.vbs /ipk $WinKey
+slmgr.vbs /ato
+
+
+#power configuration
+#Get Windwos Version number
+(Get-WmiObject Win32_OperatingSystem).Caption
+#Get Wimndows Version
+(Get-WmiObject Win32_OperatingSystem).Version
+#Set to Highperformance
+powercfg.exe /s “8c5e7fda-e8bf-4a96–9a85-a6e23a8c635c”
+
+# display
+powercfg.exe /list
+
+# get information about pagefile
+wmic pagefile
+# disable automatic pagefilesetting
+wmic computersystem set automaticmanagedpagefile=false
+# set pagefile
+wmic pagefileset set initialsize=102400,Maximumsize=102400
+
+#Get all network adapters
+Get-NetAdapter
+#Show Ip addresses
+Get-NetIPConfiguration
+# Get DNS Server
+Get-DnsClientServerAddress -InterfaceIndex 12
+
+#disable dhcp on netadapter
+#Set-NetIPInterface -DHCP Disabled
+#Set IP address and DNS
+$IpAddr1 = "192.168.1.20"
+$Gateway=192.168.1.254
+
+# Set IP Address on Ehternet 
+New-NetIPAddress -InterfaceAlias $InterFAlias1 -IPAddress $IpAddr1 -AddressFamily IPv4 -PrefixLength $PrefLen1  DefaultGateway $Gateway
+# set DNS
+Set-DnsClientServerAddress -InterfaceAlias $InterFAlias1 -ServerAddresses $IpDns
+
+Set-TimeZone -Id "W. Europe Standard Time"
+# Change system format ... Int.cpl
+
+
+# Enable RDP
+# Enable RDP Port through Firewall
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+#disable windows firewall
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+
+# Get hostname
+ $env:computername
+# rename Computer 
+Rename-Computer -NewName DC2019-01-W19
+
+
+#How to enable 'Administrator' account on Windows
+#net user "Administrator" /active:no.
+Get-LocalUser -Name "Administrator" | Enable-LocalUser
+# change Password  
+# net user Administrator *
+$UserAccount = Get-LocalUser -Name "administrator"
+$UserAccount | Set-LocalUser -Password $SecPwd
+ 
+
+# Configure
+cscript scregedit.wsf /AU 4
+# Check au
+cscript scregedit.wsf /AU /v
+
+# REG ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1
+$registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+$Name = "ocalAccountTokenFilterPolicy"
+$value = "1"
+New-ItemProperty -Path $registryPath -Name $name -Value $value `
+   -PropertyType DWORD -Force | Out-Null
+   
+# Set IPv4 before IPv6
+$registryPath = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters"
+$Name = "DisabledComponents"
+$value = "32"
+New-ItemProperty -Path $registryPath -Name $name -Value $value `
+   -PropertyType DWORD -Force | Out-Null
+
+
+# Allow Winrm as inocmming 
+Set-NetFirewallRule -Name WINRM-HTTP-In-TCP-PUBLIC -RemoteAddress Any
+
+# Get all trusted hosts for WinRM
+Get-Item WSMan:\localhost\Client\TrustedHosts
+#Configure trusted hosts for all
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value '*'
+
+
+
+New-Item -ItemType "directory" -Path "c:\inst"
+New-Item -ItemType "directory" -Path "c:\noscan"
+New-Item -ItemType "directory" -Path "c:\temp"
+
+
+
+#You can get the Disk Cleanup to work in Windows Server Core, 
+#copy the cleanmgr files of a server that has Desktop-Experience installed to your Windows Server Core server.
+#Copy the following files:
+#    C:\Windows\System32\cleanmgr.exe
+#    C:\Windows\System32\en-US\cleanmgr.exe.mui
+
+
+
+Install Windows Admin Center 
+
+# download installation package
+invoke-webrequest -URI http://aka.ms/WACDownload -outfile c:\temp\WAC.msi
+# install wac
+msiexec /i c:\temp\WAC.msi /qn /L*v c:\temp\waclog.txt SME_PORT=9443 SSL_CERTIFICATE_OPTION=generate
+# msiexec /i <WindowsAdminCenterInstallerName>.msi /qn /L*v log.txt SME_PORT=<port> SME_THUMBPRINT=<thumbprint> SSL_CERTIFICATE_OPTION=installed
+# Connect the Server to WAC
+
+# after changing the port or uninstall windows admin center run:
+netsh http delete sslcert ipport=0.0.0.0:9443
+netsh http delete urlacl url=https://+:9443/
+
+Test-NetConnection -Port 9443 -ComputerName TmmrDc01W19 -InformationLevel Detailed
+
+
+# join Domain
+add-computer –domainname "Tmmr-a1c-w19-01.tm" -DomainCredential "Tmmr-a1c-w19-01\administrator" -restart
+
+
+# Install AD Domain Services, reboot is required
+Install-WindowsFeature –Name AD-Domain-Services –IncludeManagementTools`
+#
+
+# Import-Module ADDSDeplyoment
+
+
+# Zusaetzlichen AD Controller erstellen
+# Domain Controller Ports
+#x TCP and UDP/53 for DNS resolution
+#x TCP/88 and UDP/88 for Kerberos communication (Kerberos can be forced to use TCP only)
+# UDP/123 for time synchronization, as in a domain by default the W32Time of a domain controller synchronizes with other domain controllers or the 
+   PDCE FSMO role of the top domain of the forest
+#TCP/135 for the RPC endpoint mapper
+#x TCP/389 and UDP/389 for LDAP; 
+#x TCP/464 and UDP/464 for joining and regularly changing passwords
+#x TCP/445 for SMB communication ( 137, 138, not needed any longer Windows 2000!)
+#TCP/636 if you are using LDAPS
+#xTCP/3268 as global catalog, #TCP/3269 as global catalog over SSL/TLS
+#49152-65535 for RPC dynamic ports; you can (and should) limit them so the RPC ports use a narrower range of ports. 
+   The number of ports depend on the workload of the machine. Thousand ports is more than OK in most scenarios.
+#TCP/5722 on Windows 2008(R2) if you use DFS-R to replicate SYSVOL. Due to a bug it cannot be chagned.
+#   for other win versions, this port is part the dynamic port range or is set to a specific port with 
+#   dfsrdiag starticrpc /port:nnnnn /member:<nameoftheserver> 
+#the NetLogon and NTDS ports which are part of the dynamic port
+
+# Installs DNS. 
+$DomNam="Tmmr-a1c-w19-01.tm"
+$DomNamBios="Tmmr-a1c-w19-01"
+$SecPwd=(ConvertTo-SecureString -AsPlainText "S3cur3Pwd!" -Force)
+Install-ADDSDomainController -InstallDns -Credential (Get-Credential $DomNam\administrator) -DomainName $DomNam -SafeModeAdministratorPassword $SecPwd
+
+# create new forest name ...
+Install-ADDSForest `
+  -DomainName $DomNam `
+  -CreateDnsDelegation:$false ` 
+  -DatabasePath "C:\Windows\NTDS" ` 
+  -DomainMode "7" ` 
+  -DomainNetbiosName $DomNamBios ` 
+  -ForestMode "7" ` 
+  -InstallDns:$true ` 
+  -LogPath "C:\Windows\NTDS" ` 
+  -NoRebootOnCompletion:$True ` 
+  -SysvolPath "C:\Windows\SYSVOL" ` 
+  -SafeModeAdministratorPassword $SecPwd ` 
+  -Force:$true
+
+# get status of AD Servcies
+Get-Service adws,kdc,netlogon,dns
+
+$DnsSrv="localhost"
+$DomNam="Tmmr-a1c-w19-01.tm"
+$DnsPriZon=$DomNam
+$NetworkIpPTR="192.168.1.0/24"
+$PtrIpPart="1.168.192"
+
+$DnsForw1="8.8.8.8" 
+$DnsForw1="8.8.4.4"
+# Configure DNS
+# vith dnscmd.exe
+# add Zones
+dnscmd.exe $DnsSrv /ZoneAdd $DnsPriZon /Primary /file "$DnsPriZone.dns"
+dnscmd.exe $DnsSrv /ZoneAdd "$PtrIpPart.in-addr.arpa" /Primary /file "$PtrIpPart.in-addr.arpa.dns"
+# Set DNS Forwarders
+dnscmd.exe $DnsSrv /ResetForwarders "$DnsForw1 $DnsForw2"
+#with Powershell
+# add Zones
+Add-DnsServerPrimaryZone -Name $DnsPriZon -ZoneFile "$DnsPriZon.dns"
+Add-DnsServerPrimaryZone -NetworkID $NetworkIpPTR -ZoneFile "$PtrIpPart.in-addr.arpa.dns"
+# Set DNS Forwarders
+Add-DnsServerForwarder -IPAddress $DnsForw1 -PassThru
+Add-DnsServerForwarder -IPAddress $DnsForw2 –PassThru
+
+To add an A record and an associated PTR record to the Forward and Reverse DNS zones on the server 
+(for instance, for mail.dmz.servercore.net with IP address 209.17.85.74), you can use the following commands:
+Add-DnsServerResourceRecordA -Name "mail" -ZoneName "dmz.servercore.net"
+Add-DnsServerResourceRecord -Name "74" -Ptr -ZoneName "209.17.85.in-addr.arpa.dns" -PtrDomainName "mail.dmz.servercore.net"
+# Configuration Details of the domain controller
+
+Get-ADDomainController
+
+Get-Eventlog "Directory Service" | Select-Object entrytype, source, eventid, message
+Get-Eventlog "Active Directory Web Services" | Select-Object entrytype, source, eventid, message
+
+# PowerShell Desired State Configuration
+
+#Set GroupPolicies
+https://sid-500.com/2017/08/25/configuring-group-policies-by-using-windows-powershell/ 
+
+New-ADUser –Name “Helpdesk” – GivenName Help –Surname Desk –SamAccountName Helpdesk – UserPrincipalName Helpdesk@teammicro.dom
+Set-ADAccountPassword ‘CN=Helpdesk,CN=users,DC=Teammicro,DC=Dom’ -Reset -NewPassword (ConvertTo-SecureString -AsPlainText “Test@123” -Force)
+Enable-ADAccount -Identity Helpdesk
