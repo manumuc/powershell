@@ -1,15 +1,23 @@
+# Note:
+# WSUS is deprecated
 # Variables
+# Download MS Win 2025 ISO: https://www.microsoft.com/en-us/evalcenter/download-windows-server-2025
+# System requirements: https://learn.microsoft.com/en-us/windows-server/get-started/hardware-requirements?tabs=cpu&pivots=windows-server-2025
+# Min: 1.4
 $SecPwd=(ConvertTo-SecureString -AsPlainText "S3cur3Pwd!" -Force)
-$WinKey="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-$Hostname=TmmrDc01W19
+$WinKey="BRTF6-GNY7J-F6J3V-T4FQP-8XGDY"
+$Hostname=MrDc1w25
+$domname=
 $InterFAlias1="Ethernet0"
-$IpAddr1="192.168.1.39"
+$IpAddr1="192.168.100.10"
 $PrefLen1=20
-$Gateway1="192.168.1.254"
-$IpDns = ("127.0.0.1","8.8.8.8")
+$Gateway1="192.168.100.1"
+$IpDnsHo = ("127.0.0.1","8.8.8.8")
+$IpDnsUs = ("127.0.0.1","10.34.47.251","10.45.79.251 4","8.8.8.8")
+$IpDnsEu = ("127.0.0.1","10.34.47.251","10.45.79.251 4","8.8.8.8")
 
 
-# generate autounattended.xml for windows 2019, 2016
+# generate autounattended.xml for windows 2025, 2019, 2016
 #
 #  - get autounattended.xml 
 #
@@ -17,10 +25,17 @@ $IpDns = ("127.0.0.1","8.8.8.8")
 
 
 #run sconfig command
-   - IP address
+   - Date / Time
+   - Network Settings / IP address
+   - Set Hostname
+   - Set workgroup or Domain to MrTmUs1Ex1.net  
+   - Windows Activation
+   - Add local Admin
+   - enable remote management
+   - Update strategy
  
  # get all disks
-get-voluem
+ # get-volume
 
 
 # activate Windows
@@ -29,23 +44,45 @@ slmgr.vbs /ato
 
 
 #power configuration
-#Get Windwos Version number
+#Get Windwos Version number - output is Microsoft Windows Server 2025 Standard
 (Get-WmiObject Win32_OperatingSystem).Caption
-#Get Wimndows Version
+#Get Wimndows Version - at least 10.0.26100
 (Get-WmiObject Win32_OperatingSystem).Version
-#Set to Highperformance
-powercfg.exe /s “8c5e7fda-e8bf-4a96–9a85-a6e23a8c635c”
 
 # display
 powercfg.exe /list
+#Set to Highperformance
+powercfg.exe /s “8c5e7fda-e8bf-4a96–9a85-a6e23a8c635c”
+
+# Install additional featrures: xps viewer, Openssh client, notpad (system), windows powershell pse, 
+
+# Download tools from sysinternals: 
+# coreinfo, 
 
 # get information about pagefile
+# Note: WMIC (Windows Management Instrumentation Command-line) utility is not longer installed by default:
+# it can be installed by  Optional feature setting or admin poweshell by 
+   DISM /Online /Add-Capability /CapabilityName:WMIC. 
 wmic pagefile
 # disable automatic pagefilesetting
 wmic computersystem set automaticmanagedpagefile=false
+# show pagefile
+# list pagefile settings
+wmic pagefile list /format:list
+wmic pagefileset
+# create/enable pagefile
+wmic pagefileset create name="p:\pagefile.sys"
+# set pagefile incl. name
+wmic pagefileset set name="p:\pagefile.sys",InitialSize=400,MaximumSize
+# set size on dedicated pagefile
+wmic pagefileset where name="C:\\pagefile.sys" set InitialSize=2048,MaximumSize=2048
 # set pagefile
 wmic pagefileset set initialsize=102400,Maximumsize=102400
-
+# delete pagefile
+wmic pagefileset where name="p:\\pagefile.sys" delete
+# disable pagefile and delete it
+wmic computersystem where name="%computername%" set AutomaticManagedPagefile=False
+wmic pagefileset where name="C:\\pagefile.sys" delete
 #Get all network adapters
 Get-NetAdapter
 #Show Ip addresses
